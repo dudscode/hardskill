@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hard Skills — Espec</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #080818; --bg2: #12122a; --bg3: #1c1c3a;
+      --purple: #7c6fff; --pink: #ff6b9d; --text: #e2e2f0;
+      --muted: #888aaa; --green: #4ade80; --yellow: #fbbf24;
+      --red: #f87171; --blue: #60a5fa;
+      --border: rgba(124,111,255,0.2); --radius: 12px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* NAV */
+    nav { position: sticky; top: 0; z-index: 100; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 4px; overflow-x: auto; }
+    nav::-webkit-scrollbar { height: 0; }
+    .nav-logo { font-weight: 800; font-size: 14px; padding: 16px 0; margin-right: 16px; background: linear-gradient(135deg, var(--purple), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; white-space: nowrap; flex-shrink: 0; }
+    .nav-tab { padding: 14px 14px; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active { color: var(--purple); border-bottom-color: var(--purple); }
+
+    /* PAGES */
+    .page { display: none; padding: 28px 20px; max-width: 900px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* SECTION HEADER */
+    .section-header { margin-bottom: 24px; }
+    .section-header h2 { font-size: 22px; font-weight: 700; }
+    .section-header p { color: var(--muted); font-size: 14px; margin-top: 6px; line-height: 1.6; }
+    .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+    .badge-purple { background: rgba(124,111,255,0.12); color: var(--purple); }
+    .badge-pink { background: rgba(255,107,157,0.12); color: var(--pink); }
+    .badge-green { background: rgba(74,222,128,0.12); color: var(--green); }
+    .badge-yellow { background: rgba(251,191,36,0.12); color: var(--yellow); }
+    .badge-blue { background: rgba(96,165,250,0.12); color: var(--blue); }
+    .badge-red { background: rgba(248,113,113,0.12); color: var(--red); }
+
+    /* CONTENT BLOCKS */
+    .block { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+    .block h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .block p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
+    .block p:last-child { margin-bottom: 0; }
+    .block ul, .block ol { padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 2; }
+    .block li strong { color: var(--text); }
+    .block code { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 7px; font-family: 'SF Mono', monospace; font-size: 13px; color: var(--purple); }
+
+    /* ACCORDION */
+    .acc { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+    .acc-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
+    .acc-header:hover { background: var(--bg3); }
+    .acc-header h3 { font-size: 14px; font-weight: 600; }
+    .acc-icon { color: var(--muted); font-size: 11px; transition: transform 0.2s; }
+    .acc.open .acc-icon { transform: rotate(180deg); }
+    .acc-body { display: none; padding: 4px 20px 20px; border-top: 1px solid var(--border); }
+    .acc.open .acc-body { display: block; }
+    .acc-body p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-top: 12px; margin-bottom: 8px; }
+    .acc-body ul, .acc-body ol { padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.9; margin-top: 8px; }
+    .acc-body li strong { color: var(--text); }
+    .acc-body code { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 1px 7px; font-family: 'SF Mono', monospace; font-size: 12px; color: var(--purple); }
+
+    /* CODE BLOCK */
+    pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; margin: 12px 0; }
+    pre code { background: none; border: none; padding: 0; color: var(--text); font-size: 13px; line-height: 1.6; }
+
+    /* QUIZ */
+    .quiz-wrap { margin-top: 8px; }
+    .q-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; }
+    .q-num { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .q-text { font-size: 15px; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
+    .q-options { display: flex; flex-direction: column; gap: 8px; }
+    .q-opt { padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; color: var(--text); background: transparent; text-align: left; }
+    .q-opt:hover:not(.disabled) { border-color: var(--purple); background: rgba(124,111,255,0.07); }
+    .q-opt.correct { border-color: var(--green); background: rgba(74,222,128,0.1); color: var(--green); }
+    .q-opt.wrong { border-color: var(--red); background: rgba(248,113,113,0.1); color: var(--red); }
+    .q-opt.disabled { cursor: default; }
+    .q-feedback { margin-top: 12px; font-size: 13px; line-height: 1.6; display: none; }
+    .q-feedback.visible { display: block; }
+    .q-feedback.ok { color: var(--green); }
+    .q-feedback.ko { color: var(--red); }
+
+    .quiz-score { background: var(--bg3); border-radius: 10px; padding: 20px 24px; margin-top: 20px; display: none; }
+    .quiz-score.visible { display: block; }
+    .qs-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .qs-bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+    .qs-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--purple), var(--green)); transition: width 0.6s; }
+    .qs-text { font-size: 18px; font-weight: 800; }
+
+    .btn { padding: 10px 22px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: linear-gradient(135deg, var(--purple), var(--pink)); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--purple); color: var(--purple); }
+    .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+    .tab-actions { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+    .inner-tab { padding: 8px 18px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .inner-tab:hover, .inner-tab.active { border-color: var(--purple); color: var(--purple); background: rgba(124,111,255,0.1); }
+
+    .subsection { display: none; }
+    .subsection.active { display: block; }
+
+    .info-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .info-chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 13px; }
+    .info-chip strong { color: var(--purple); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 12px; }
+      .page { padding: 20px 14px; }
+      .section-header h2 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Hard Skills ✦</div>
+  <div class="nav-tab active" onclick="showPage('auth')">Autenticação</div>
+  <div class="nav-tab" onclick="showPage('perf')">Performance</div>
+  <div class="nav-tab" onclick="showPage('seg')">Segurança</div>
+  <div class="nav-tab" onclick="showPage('arq')">Arquitetura</div>
+  <div class="nav-tab" onclick="showPage('signals')">4 Signals</div>
+  <div class="nav-tab" onclick="showPage('git')">Git Flow</div>
+  <div class="nav-tab" onclick="showPage('testes')">Testes</div>
+  <div class="nav-tab" onclick="showPage('cicd')">CI/CD</div>
+</nav>
+
+<!-- ==================== AUTENTICAÇÃO ==================== -->
+<div id="page-auth" class="page active">
+  <div class="section-header">
+    <span class="badge badge-purple">Autenticação &amp; Autorização</span>
+    <h2>JWT, Session Token &amp; OAuth</h2>
+    <p>Mecanismos de autenticação usados em aplicações modernas — quando usar cada um e como funcionam.</p>
+  </div>
+
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('auth','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('auth','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('auth','quiz')">Quiz</button>
+  </div>
+
+  <!-- RESUMO -->
+  <div id="auth-resumo" class="subsection active">
+    <div class="block">
+      <h3>🔑 JWT — JSON Web Token</h3>
+      <p>Token <strong>stateless</strong> composto por 3 partes separadas por ponto: <code>header.payload.signature</code>.</p>
+      <ul>
+        <li><strong>Header:</strong> algoritmo (HS256, RS256) e tipo</li>
+        <li><strong>Payload:</strong> claims — dados do usuário (sub, email, roles, exp)</li>
+        <li><strong>Signature:</strong> garante que o token não foi alterado</li>
+      </ul>
+      <p style="margin-top:12px"><strong>Vantagens:</strong> sem necessidade de consultar banco a cada request, escalável, ideal para microsserviços.<br>
+      <strong>Desvantagens:</strong> não dá para invalidar antes de expirar (necessita blacklist ou refresh token curto).</p>
+    </div>
+
+    <div class="block">
+      <h3>🍪 Session Token (Cookie)</h3>
+      <p>O servidor gera um ID de sessão, guarda no banco/redis, e envia ao browser via cookie. A cada request o servidor consulta a sessão.</p>
+      <ul>
+        <li><strong>Stateful:</strong> sessão vive no servidor</li>
+        <li><strong>Revogação fácil:</strong> delete a sessão → usuário deslogado imediatamente</li>
+        <li><strong>Problemas:</strong> não escala bem horizontalmente sem store compartilhada (Redis)</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h3>🔐 OAuth 2.0 &amp; OpenID Connect</h3>
+      <p><strong>OAuth 2.0</strong> é um protocolo de <em>autorização</em> (delegar acesso a recursos). <strong>OIDC</strong> adiciona camada de <em>autenticação</em> em cima do OAuth.</p>
+      <ul>
+        <li><strong>Authorization Code Flow:</strong> mais seguro, usado em SPAs com PKCE</li>
+        <li><strong>Client Credentials:</strong> machine-to-machine (sem usuário)</li>
+        <li><strong>Access Token + Refresh Token:</strong> access curto (15min), refresh longo (7d)</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h3>⚖️ Quando usar cada um</h3>
+      <div class="info-row">
+        <div class="info-chip"><strong>JWT</strong>Microsserviços / APIs stateless</div>
+        <div class="info-chip"><strong>Session</strong>Monólito web tradicional, SSR</div>
+        <div class="info-chip"><strong>OAuth/OIDC</strong>Login social, SSO, B2B</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXEMPLOS -->
+  <div id="auth-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Decodificando um JWT</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <p>Um JWT tem a forma <code>xxxxx.yyyyy.zzzzz</code>. Cada parte é base64url-encoded.</p>
+        <pre><code>// Header decodificado
+{ "alg": "HS256", "typ": "JWT" }
+
+// Payload decodificado
+{
+  "sub": "user_123",
+  "email": "edu@example.com",
+  "roles": ["frontend-dev"],
+  "iat": 1713000000,
+  "exp": 1713003600   // expira em 1h
+}
+
+// Verificando no Node.js
+import jwt from 'jsonwebtoken'
+const payload = jwt.verify(token, process.env.JWT_SECRET)
+// lança JsonWebTokenError se inválido ou expirado</code></pre>
+      </div>
+    </div>
+
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Refresh Token Flow</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// 1. Login — servidor emite par de tokens
+POST /auth/login → {
+  access_token:  "eyJ...", // expira em 15min
+  refresh_token: "opq...", // expira em 7d (httpOnly cookie)
+}
+
+// 2. Quando access expirar (401), frontend chama:
+POST /auth/refresh
+Cookie: refresh_token=opq...
+→ { access_token: "eyJ..." } // novo access
+
+// 3. Logout — revoga o refresh_token no banco</code></pre>
+      </div>
+    </div>
+
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Authorization Code + PKCE (SPA)</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// 1. Gera code_verifier aleatório e code_challenge = SHA256(verifier)
+const verifier  = crypto.randomBytes(32).toString('base64url')
+const challenge = crypto.createHash('sha256').update(verifier).digest('base64url')
+
+// 2. Redireciona o usuário para o IdP
+GET /authorize?
+  client_id=...
+  &redirect_uri=...
+  &response_type=code
+  &code_challenge=challenge
+  &code_challenge_method=S256
+
+// 3. IdP retorna com code; troca pelo token:
+POST /token { code, code_verifier: verifier, ... }
+→ { access_token, id_token, refresh_token }</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="auth-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-auth"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('auth')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== PERFORMANCE ==================== -->
+<div id="page-perf" class="page">
+  <div class="section-header">
+    <span class="badge badge-yellow">Performance</span>
+    <h2>Monitoramento, Logs, Métricas &amp; Cache</h2>
+    <p>Como medir, observar e otimizar o desempenho de aplicações frontend e backend.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('perf','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('perf','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('perf','quiz')">Quiz</button>
+  </div>
+
+  <div id="perf-resumo" class="subsection active">
+    <div class="block">
+      <h3>📊 Core Web Vitals</h3>
+      <ul>
+        <li><strong>LCP (Largest Contentful Paint):</strong> tempo para o maior elemento visível aparecer. Meta: &lt; 2.5s</li>
+        <li><strong>INP (Interaction to Next Paint):</strong> latência de interação. Meta: &lt; 200ms</li>
+        <li><strong>CLS (Cumulative Layout Shift):</strong> estabilidade visual. Meta: &lt; 0.1</li>
+        <li><strong>FID/FCP/TTFB:</strong> First Input Delay, First Contentful Paint, Time To First Byte</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🪵 Logs &amp; Observabilidade</h3>
+      <p>Os 3 pilares: <strong>Logs</strong> (eventos), <strong>Métricas</strong> (números ao longo do tempo), <strong>Traces</strong> (rastreamento de uma request através de serviços).</p>
+      <ul>
+        <li><strong>Structured logging:</strong> JSON com campos consistentes (level, timestamp, requestId, userId)</li>
+        <li><strong>Níveis:</strong> ERROR &gt; WARN &gt; INFO &gt; DEBUG</li>
+        <li><strong>Ferramentas:</strong> Datadog, New Relic, Grafana + Loki, ELK Stack</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>⚡ Cache</h3>
+      <ul>
+        <li><strong>HTTP Cache:</strong> <code>Cache-Control: max-age, stale-while-revalidate</code></li>
+        <li><strong>CDN:</strong> edge cache — arquivos estáticos próximos ao usuário</li>
+        <li><strong>Redis/Memcached:</strong> cache de dados no servidor (queries caras, sessões)</li>
+        <li><strong>Memoização:</strong> cache em memória de resultados de funções puras</li>
+        <li><strong>Cache invalidation:</strong> o problema mais difícil — estratégias: TTL, event-driven, versioning na URL</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🔁 Callback &amp; Async</h3>
+      <p>Padrões de performance em JS: evitar blocking no event loop, usar Web Workers para CPU-heavy, lazy loading de módulos.</p>
+      <ul>
+        <li><strong>Debounce:</strong> adia execução enquanto evento continuar disparando (ex: input search)</li>
+        <li><strong>Throttle:</strong> limita execuções por intervalo de tempo (ex: scroll handler)</li>
+        <li><strong>requestAnimationFrame:</strong> animações sincronizadas com refresh do browser</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="perf-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Debounce vs Throttle</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// Debounce — só executa após N ms de silêncio
+function debounce(fn, delay) {
+  let timer
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), delay)
+  }
+}
+const onSearch = debounce((q) => fetchResults(q), 300)
+
+// Throttle — executa no máximo 1x a cada N ms
+function throttle(fn, limit) {
+  let last = 0
+  return (...args) => {
+    const now = Date.now()
+    if (now - last >= limit) { last = now; fn(...args) }
+  }
+}
+window.addEventListener('scroll', throttle(handleScroll, 100))</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Cache-Control Headers</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// Arquivo estático com hash no nome → cache longo
+Cache-Control: public, max-age=31536000, immutable
+// main.abc123.js nunca muda → pode cachear 1 ano
+
+// HTML da aplicação → sem cache (ou curto)
+Cache-Control: no-cache
+// Browser revalida sempre, mas usa cache se 304
+
+// API que pode ficar stale por 1min enquanto revalida
+Cache-Control: public, max-age=60, stale-while-revalidate=300</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Log estruturado (Node.js / Pino)</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>import pino from 'pino'
+const log = pino()
+
+// Em vez de: console.log('User logged in', userId)
+// Use campos estruturados:
+log.info({ userId, action: 'login', ip: req.ip }, 'User authenticated')
+
+// Output JSON:
+// {"level":30,"time":1713000000,"userId":"u_123",
+//  "action":"login","ip":"1.2.3.4","msg":"User authenticated"}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="perf-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-perf"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('perf')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== SEGURANÇA ==================== -->
+<div id="page-seg" class="page">
+  <div class="section-header">
+    <span class="badge badge-red">Segurança</span>
+    <h2>OWASP Top 10 &amp; Boas Práticas</h2>
+    <p>Principais vulnerabilidades web e como preveni-las no frontend e backend.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('seg','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('seg','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('seg','quiz')">Quiz</button>
+  </div>
+
+  <div id="seg-resumo" class="subsection active">
+    <div class="block">
+      <h3>🛡️ OWASP Top 10 (2021)</h3>
+      <ol>
+        <li><strong>Broken Access Control</strong> — usuário acessa recurso que não deveria</li>
+        <li><strong>Cryptographic Failures</strong> — dados sensíveis sem criptografia, MD5/SHA1 obsoleto</li>
+        <li><strong>Injection</strong> — SQL, NoSQL, LDAP, OS command injection</li>
+        <li><strong>Insecure Design</strong> — falhas arquiteturais, sem threat modeling</li>
+        <li><strong>Security Misconfiguration</strong> — configs default, headers ausentes, CORS aberto</li>
+        <li><strong>Vulnerable &amp; Outdated Components</strong> — deps com CVEs conhecidas</li>
+        <li><strong>Authentication Failures</strong> — senhas fracas, sem MFA, brute-force permitido</li>
+        <li><strong>Software &amp; Data Integrity Failures</strong> — sem verificação de integridade (ex: supply chain)</li>
+        <li><strong>Security Logging &amp; Monitoring Failures</strong> — sem alertas de ataques</li>
+        <li><strong>SSRF</strong> — servidor faz request para URL controlada pelo atacante</li>
+      </ol>
+    </div>
+    <div class="block">
+      <h3>💉 XSS &amp; Injeção</h3>
+      <ul>
+        <li><strong>XSS Reflected:</strong> script injetado via URL refletido na página</li>
+        <li><strong>XSS Stored:</strong> script salvo no banco, executa para todos os usuários</li>
+        <li><strong>Prevenção:</strong> escapar output, CSP (Content Security Policy), DOMPurify para HTML dinâmico</li>
+        <li><strong>SQL Injection:</strong> nunca concatenar input em query. Sempre <em>parameterized queries</em></li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🔒 Headers de Segurança</h3>
+      <ul>
+        <li><code>Content-Security-Policy</code> — controla quais recursos podem ser carregados</li>
+        <li><code>X-Frame-Options: DENY</code> — previne clickjacking</li>
+        <li><code>Strict-Transport-Security</code> — força HTTPS</li>
+        <li><code>X-Content-Type-Options: nosniff</code></li>
+        <li><code>Referrer-Policy: strict-origin-when-cross-origin</code></li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🌐 CORS</h3>
+      <p>Cross-Origin Resource Sharing. Browser bloqueia requests cross-origin por padrão. O servidor deve responder com headers <code>Access-Control-Allow-Origin</code> corretos.</p>
+      <ul>
+        <li><strong>Nunca use</strong> <code>Access-Control-Allow-Origin: *</code> com <code>credentials: true</code></li>
+        <li>Whitelist explícita de origens permitidas</li>
+        <li>Preflight (<code>OPTIONS</code>) precisa responder corretamente</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="seg-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>XSS — vulnerável vs seguro</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// ❌ Vulnerável — XSS stored
+element.innerHTML = userComment  // se comment = "&lt;script&gt;alert(1)&lt;/script&gt;"
+
+// ✅ Seguro — textContent não executa HTML
+element.textContent = userComment
+
+// ✅ Se precisar HTML dinâmico: sanitizar
+import DOMPurify from 'dompurify'
+element.innerHTML = DOMPurify.sanitize(userComment)</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>SQL Injection — vulnerável vs seguro</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// ❌ Vulnerável
+const q = `SELECT * FROM users WHERE email = '${email}'`
+// email = "' OR '1'='1" → retorna todos os usuários
+
+// ✅ Parameterized query (Node + pg)
+const { rows } = await db.query(
+  'SELECT * FROM users WHERE email = $1',
+  [email]
+)</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>CSP Header</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' https://cdn.trusted.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  connect-src 'self' https://api.meuapp.com;
+  frame-ancestors 'none';</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="seg-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-seg"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('seg')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== ARQUITETURA ==================== -->
+<div id="page-arq" class="page">
+  <div class="section-header">
+    <span class="badge badge-blue">Arquitetura</span>
+    <h2>Microsserviços, Clean Arch &amp; 12 Factors</h2>
+    <p>Padrões arquiteturais para sistemas escaláveis e maintíveis.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('arq','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('arq','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('arq','quiz')">Quiz</button>
+  </div>
+
+  <div id="arq-resumo" class="subsection active">
+    <div class="block">
+      <h3>🧩 Microsserviços vs Monólito</h3>
+      <ul>
+        <li><strong>Monólito:</strong> deploy único, simples de desenvolver inicialmente, difícil de escalar partes individualmente</li>
+        <li><strong>Microsserviços:</strong> serviços independentes, deploy e escala individuais, complexidade de rede e distribuição</li>
+        <li><strong>Quando migrar:</strong> quando o time crescer ou quando precisar escalar partes diferentes de forma independente</li>
+        <li><strong>Comunicação:</strong> REST, gRPC, eventos (Kafka/RabbitMQ)</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🧅 Clean Architecture / Onion</h3>
+      <p>Camadas concêntricas onde as dependências sempre apontam para dentro (para o domínio).</p>
+      <ul>
+        <li><strong>Domain/Entities:</strong> regras de negócio puras, sem frameworks</li>
+        <li><strong>Use Cases/Application:</strong> orquestra entidades, casos de uso da aplicação</li>
+        <li><strong>Interface Adapters:</strong> controllers, presenters, gateways</li>
+        <li><strong>Frameworks &amp; Drivers:</strong> Express, React, banco de dados — detalhes de infra</li>
+      </ul>
+      <p><strong>Regra de ouro:</strong> código do domínio não importa nada do lado de fora.</p>
+    </div>
+    <div class="block">
+      <h3>📋 12 Factor App</h3>
+      <ol style="line-height:2.2">
+        <li><strong>Codebase:</strong> um repo, múltiplos deploys</li>
+        <li><strong>Dependencies:</strong> declare explicitamente (package.json)</li>
+        <li><strong>Config:</strong> variáveis de ambiente, não no código</li>
+        <li><strong>Backing Services:</strong> trate DB, cache como recursos attachables</li>
+        <li><strong>Build/Release/Run:</strong> fases separadas e imutáveis</li>
+        <li><strong>Processes:</strong> stateless, sem estado em memória entre requests</li>
+        <li><strong>Port Binding:</strong> app exporta serviço via porta</li>
+        <li><strong>Concurrency:</strong> escala via processos</li>
+        <li><strong>Disposability:</strong> startup rápido, shutdown gracioso</li>
+        <li><strong>Dev/Prod Parity:</strong> ambientes o mais parecidos possível</li>
+        <li><strong>Logs:</strong> trate como event streams (stdout)</li>
+        <li><strong>Admin Processes:</strong> tarefas admin como one-off processes</li>
+      </ol>
+    </div>
+  </div>
+
+  <div id="arq-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Clean Architecture — estrutura de pastas</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>src/
+├── domain/
+│   ├── entities/          # User, Order (sem deps externas)
+│   └── repositories/      # interfaces (contratos)
+├── application/
+│   └── use-cases/         # CreateUser, ProcessOrder
+├── infrastructure/
+│   ├── db/                # implementação do repositório (Prisma)
+│   └── http/              # Express controllers
+└── main/                  # composição / DI</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Config via env vars (Factor 3)</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// ❌ Config hardcoded
+const db = new Client({ host: 'prod-db.internal', port: 5432 })
+
+// ✅ Via variáveis de ambiente
+const db = new Client({
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT ?? 5432),
+  database: process.env.DB_NAME,
+})
+
+// .env (nunca commitar) / .env.example (commitar)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=myapp</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="arq-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-arq"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('arq')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== 4 GOLDEN SIGNALS ==================== -->
+<div id="page-signals" class="page">
+  <div class="section-header">
+    <span class="badge badge-green">SRE</span>
+    <h2>4 Golden Signals</h2>
+    <p>Os 4 indicadores fundamentais para monitorar a saúde de qualquer serviço (Google SRE Book).</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('signals','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('signals','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('signals','quiz')">Quiz</button>
+  </div>
+
+  <div id="signals-resumo" class="subsection active">
+    <div class="block">
+      <h3>⏱️ 1. Latência</h3>
+      <p>Tempo para processar uma request. Meça <strong>latência de sucesso separado do erro</strong> — um erro 500 rápido não é "bom desempenho".</p>
+      <ul>
+        <li>Monitore percentis: p50, p95, p99 (não só média)</li>
+        <li>Alertas úteis: p99 &gt; 1s por mais de 5 minutos</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>📈 2. Tráfego (Traffic)</h3>
+      <p>Demanda sobre o sistema. Para web: <strong>requests por segundo (RPS)</strong>. Para streaming: <strong>bytes por segundo</strong>.</p>
+      <ul>
+        <li>Referência para dimensionar capacidade</li>
+        <li>Picos inesperados de tráfego indicam possível ataque ou viralização</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>❌ 3. Erros</h3>
+      <p>Taxa de requests que falham. Inclua erros explícitos (5xx) e <strong>erros implícitos</strong> (200 com conteúdo errado).</p>
+      <ul>
+        <li>Error rate = erros / total de requests</li>
+        <li>Defina SLO: ex: &lt; 0.1% de erros</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🔋 4. Saturação</h3>
+      <p>O quão "cheio" está o serviço. CPU, memória, disco, conexões de DB. Prevê degradação antes de acontecer.</p>
+      <ul>
+        <li>Alta saturação → alta latência em breve</li>
+        <li>Alertas: CPU &gt; 80% por 10min, connection pool &gt; 90%</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>📌 USE Method (complementar)</h3>
+      <p>Para recursos de infraestrutura: <strong>Utilization, Saturation, Errors</strong>. Enquanto os 4 signals focam no serviço, USE foca nos recursos de hardware.</p>
+    </div>
+  </div>
+
+  <div id="signals-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Dashboard de alertas (pseudocódigo Prometheus)</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code># Latência p99 &gt; 500ms por 5 min → alert
+alert: HighLatency
+expr: histogram_quantile(0.99, http_request_duration_seconds_bucket) &gt; 0.5
+for: 5m
+
+# Error rate &gt; 1%
+alert: HighErrorRate
+expr: rate(http_requests_total{status=~"5.."}[5m])
+    / rate(http_requests_total[5m]) &gt; 0.01
+for: 2m
+
+# Saturação — connection pool
+alert: DBConnectionPoolSaturation
+expr: db_pool_connections_in_use / db_pool_connections_max &gt; 0.9
+for: 3m</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="signals-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-signals"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('signals')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== GIT FLOW ==================== -->
+<div id="page-git" class="page">
+  <div class="section-header">
+    <span class="badge badge-purple">Versionamento</span>
+    <h2>Git Flow &amp; Boas Práticas</h2>
+    <p>Estratégias de branching, commits semânticos e colaboração com Git.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('git','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('git','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('git','quiz')">Quiz</button>
+  </div>
+
+  <div id="git-resumo" class="subsection active">
+    <div class="block">
+      <h3>🌊 Git Flow</h3>
+      <p>Modelo de branching com branches de vida longa e branches de feature de curta duração.</p>
+      <ul>
+        <li><strong>main/master:</strong> produção, sempre estável</li>
+        <li><strong>develop:</strong> integração de features</li>
+        <li><strong>feature/xxx:</strong> branch por feature, sai de develop</li>
+        <li><strong>release/x.y.z:</strong> prep de release (bump de versão, bugfixes)</li>
+        <li><strong>hotfix/xxx:</strong> correção urgente em produção, sai de main</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🔀 Trunk-Based Development (alternativa)</h3>
+      <p>Feature branches <strong>muito curtas</strong> (1-2 dias), merge frequente para main. Exige feature flags para código incompleto. Preferido por times com CI/CD maduro.</p>
+    </div>
+    <div class="block">
+      <h3>📝 Commits Semânticos (Conventional Commits)</h3>
+      <ul>
+        <li><code>feat:</code> nova funcionalidade</li>
+        <li><code>fix:</code> correção de bug</li>
+        <li><code>docs:</code> apenas documentação</li>
+        <li><code>style:</code> formatação (sem mudança de lógica)</li>
+        <li><code>refactor:</code> refatoração (sem fix nem feat)</li>
+        <li><code>test:</code> adição de testes</li>
+        <li><code>chore:</code> build, deps, configs</li>
+        <li><code>perf:</code> melhoria de performance</li>
+        <li><code>ci:</code> mudanças de CI</li>
+      </ul>
+      <p>Com <code>!</code> indica breaking change: <code>feat!: remove deprecated API</code></p>
+    </div>
+    <div class="block">
+      <h3>✅ Boas Práticas</h3>
+      <ul>
+        <li>Commits atômicos — uma mudança lógica por commit</li>
+        <li>Pull Requests pequenos — mais fácil de revisar</li>
+        <li>Code review obrigatório antes de merge</li>
+        <li><code>.gitignore</code> — nunca commitar .env, node_modules, build</li>
+        <li>Protected branches + required checks no main</li>
+        <li>Rebase local antes de abrir PR (histórico limpo)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="git-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Fluxo completo de uma feature</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code># Cria branch da feature
+git checkout develop
+git pull origin develop
+git checkout -b feature/login-oauth
+
+# Desenvolve, commits semânticos
+git add src/auth/
+git commit -m "feat(auth): add OAuth2 PKCE flow"
+
+git add tests/auth/
+git commit -m "test(auth): add integration tests for OAuth flow"
+
+# Antes de abrir PR, rebase em develop
+git fetch origin
+git rebase origin/develop
+
+# Push e abre PR → code review → merge com squash</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Hotfix em produção</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code># Sai do main (produção)
+git checkout main
+git checkout -b hotfix/fix-payment-crash
+
+# Corrige, commit, merge em main E develop
+git commit -m "fix(payment): handle null card number on checkout"
+
+git checkout main
+git merge hotfix/fix-payment-crash
+git tag v1.4.1
+
+git checkout develop
+git merge hotfix/fix-payment-crash
+
+git branch -d hotfix/fix-payment-crash</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="git-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-git"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('git')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== TESTES ==================== -->
+<div id="page-testes" class="page">
+  <div class="section-header">
+    <span class="badge badge-green">Qualidade</span>
+    <h2>Paradigmas &amp; Práticas de Teste</h2>
+    <p>Pirâmide de testes, TDD, tipos e estratégias para garantir qualidade de software.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('testes','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('testes','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('testes','quiz')">Quiz</button>
+  </div>
+
+  <div id="testes-resumo" class="subsection active">
+    <div class="block">
+      <h3>🔺 Pirâmide de Testes</h3>
+      <ul>
+        <li><strong>Unit (base):</strong> rápidos, isolados, muitos. Testam uma função/classe.</li>
+        <li><strong>Integration (meio):</strong> testam a colaboração entre módulos (ex: service + DB real)</li>
+        <li><strong>E2E (topo):</strong> poucos, lentos, testam o sistema completo via browser (Playwright, Cypress)</li>
+      </ul>
+      <p>Evite a "pirâmide invertida" — muitos E2E e poucos unit são frágeis e lentos.</p>
+    </div>
+    <div class="block">
+      <h3>🔴🟢🔵 TDD — Test Driven Development</h3>
+      <ul>
+        <li><strong>Red:</strong> escreve o teste que falha</li>
+        <li><strong>Green:</strong> escreve o código mínimo para passar</li>
+        <li><strong>Refactor:</strong> melhora o código mantendo os testes verdes</li>
+      </ul>
+      <p>Benefícios: design emergente, confiança no refactor, documentação viva.</p>
+    </div>
+    <div class="block">
+      <h3>🎭 Mocks, Stubs e Spies</h3>
+      <ul>
+        <li><strong>Stub:</strong> substitui uma dependência com resposta pré-definida (sem verificação)</li>
+        <li><strong>Mock:</strong> stub com verificação — você checa se foi chamado, como e quantas vezes</li>
+        <li><strong>Spy:</strong> observa chamadas sem substituir a implementação real</li>
+        <li><strong>Fake:</strong> implementação alternativa simplificada (ex: InMemoryRepository)</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>📏 Boas Práticas</h3>
+      <ul>
+        <li>Arrange, Act, Assert (AAA) — estrutura clara</li>
+        <li>Um assert lógico por teste</li>
+        <li>Nomes descritivos: <code>should return 404 when user not found</code></li>
+        <li>Evite testes que dependem de ordem de execução</li>
+        <li>Coverage como guia, não como objetivo — 100% com maus testes é pior que 70% com bons</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="testes-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Unit test com Vitest/Jest</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// src/utils/formatCurrency.ts
+export function formatCurrency(value: number, currency = 'BRL') {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency', currency
+  }).format(value)
+}
+
+// src/utils/formatCurrency.test.ts
+import { describe, it, expect } from 'vitest'
+import { formatCurrency } from './formatCurrency'
+
+describe('formatCurrency', () => {
+  it('formats BRL correctly', () => {
+    expect(formatCurrency(1234.5)).toBe('R$\u00a01.234,50')
+  })
+  it('handles zero', () => {
+    expect(formatCurrency(0)).toBe('R$\u00a00,00')
+  })
+  it('supports other currencies', () => {
+    expect(formatCurrency(10, 'USD')).toContain('10')
+  })
+})</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Mock de dependência</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code">import { vi, it, expect } from 'vitest'
+import { sendWelcomeEmail } from './emailService'
+import { createUser } from './userService'
+
+vi.mock('./emailService', () => ({
+  sendWelcomeEmail: vi.fn()
+}))
+
+it('sends welcome email after user creation', async () => {
+  // Arrange
+  const userData = { email: 'edu@test.com', name: 'Edu' }
+
+  // Act
+  await createUser(userData)
+
+  // Assert
+  expect(sendWelcomeEmail).toHaveBeenCalledOnce()
+  expect(sendWelcomeEmail).toHaveBeenCalledWith(userData.email)
+})</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>E2E com Playwright</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>import { test, expect } from '@playwright/test'
+
+test('user can login and see dashboard', async ({ page }) => {
+  await page.goto('/login')
+  await page.fill('[data-testid="email"]', 'edu@example.com')
+  await page.fill('[data-testid="password"]', 'secret123')
+  await page.click('[data-testid="submit"]')
+
+  await expect(page).toHaveURL('/dashboard')
+  await expect(page.locator('h1')).toContainText('Bem-vinda')
+})</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="testes-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-testes"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('testes')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<!-- ==================== CI/CD ==================== -->
+<div id="page-cicd" class="page">
+  <div class="section-header">
+    <span class="badge badge-pink">DevOps</span>
+    <h2>CI/CD — Pipeline &amp; Workflow</h2>
+    <p>Entrega contínua: automatizar build, test, deploy e garantir qualidade a cada mudança.</p>
+  </div>
+  <div class="tab-actions">
+    <button class="inner-tab active" onclick="showSub('cicd','resumo')">Resumo</button>
+    <button class="inner-tab" onclick="showSub('cicd','exemplos')">Exemplos</button>
+    <button class="inner-tab" onclick="showSub('cicd','quiz')">Quiz</button>
+  </div>
+
+  <div id="cicd-resumo" class="subsection active">
+    <div class="block">
+      <h3>🔄 CI — Continuous Integration</h3>
+      <p>Integrar código frequentemente e validar automaticamente. A cada push/PR:</p>
+      <ul>
+        <li>Lint + type check</li>
+        <li>Testes unitários e de integração</li>
+        <li>Build da aplicação</li>
+        <li>Análise de segurança (SAST, dependency audit)</li>
+        <li>Code coverage report</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🚀 CD — Continuous Delivery/Deployment</h3>
+      <ul>
+        <li><strong>Delivery:</strong> código sempre pronto para deploy (aprovação manual para produção)</li>
+        <li><strong>Deployment:</strong> deploy automático para produção a cada merge</li>
+        <li><strong>Estratégias:</strong> Blue/Green, Canary, Feature Flags</li>
+        <li><strong>Rollback:</strong> sempre ter plano de reversão — imagens Docker imutáveis ajudam</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>🔵🟢 Blue/Green &amp; Canary</h3>
+      <ul>
+        <li><strong>Blue/Green:</strong> dois ambientes idênticos, alterna o tráfego 100% para o novo (rollback instantâneo)</li>
+        <li><strong>Canary:</strong> nova versão recebe % crescente de tráfego (ex: 1% → 10% → 50% → 100%)</li>
+        <li><strong>Feature Flags:</strong> desacopla deploy de release — feature vai para prod mas fica desligada</li>
+      </ul>
+    </div>
+    <div class="block">
+      <h3>📦 Ferramentas</h3>
+      <div class="info-row">
+        <div class="info-chip"><strong>CI/CD</strong>GitHub Actions, GitLab CI, CircleCI, Jenkins</div>
+        <div class="info-chip"><strong>Containers</strong>Docker, Kubernetes</div>
+        <div class="info-chip"><strong>IaC</strong>Terraform, Pulumi</div>
+        <div class="info-chip"><strong>Registry</strong>ECR, DockerHub, GCR</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cicd-exemplos" class="subsection">
+    <div class="acc open">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>GitHub Actions — pipeline completo</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --coverage
+      - run: npm run build
+
+  deploy:
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker build -t myapp:${{ github.sha }} .
+      - run: docker push registry/myapp:${{ github.sha }}
+      - run: kubectl set image deployment/myapp app=registry/myapp:${{ github.sha }}</code></pre>
+      </div>
+    </div>
+    <div class="acc">
+      <div class="acc-header" onclick="toggleAcc(this)">
+        <h3>Feature Flag simples</h3><span class="acc-icon">▼</span>
+      </div>
+      <div class="acc-body">
+        <pre><code>// flags.ts
+export const flags = {
+  newCheckoutFlow: process.env.NEXT_PUBLIC_FLAG_NEW_CHECKOUT === 'true',
+  darkMode: process.env.NEXT_PUBLIC_FLAG_DARK_MODE === 'true',
+}
+
+// Uso no componente
+import { flags } from '@/flags'
+
+export function Checkout() {
+  if (flags.newCheckoutFlow) {
+    return &lt;NewCheckout /&gt;
+  }
+  return &lt;LegacyCheckout /&gt;
+}</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="cicd-quiz" class="subsection">
+    <div class="quiz-wrap" id="quiz-cicd"></div>
+    <button class="btn btn-outline btn-sm" onclick="resetQuiz('cicd')">Reiniciar quiz</button>
+  </div>
+</div>
+
+<script>
+// ===== NAVIGATION =====
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById('page-' + id).classList.add('active')
+  event.currentTarget.classList.add('active')
+}
+
+// ===== INNER TABS =====
+function showSub(page, sub) {
+  const pageEl = document.getElementById('page-' + page)
+  pageEl.querySelectorAll('.subsection').forEach(s => s.classList.remove('active'))
+  pageEl.querySelectorAll('.inner-tab').forEach(t => t.classList.remove('active'))
+  document.getElementById(page + '-' + sub).classList.add('active')
+  event.currentTarget.classList.add('active')
+}
+
+// ===== ACCORDION =====
+function toggleAcc(header) {
+  header.parentElement.classList.toggle('open')
+}
+
+// ===== QUIZ DATA =====
+const quizData = {
+  auth: [
+    {
+      q: 'Qual é a principal vantagem do JWT sobre Session Tokens?',
+      opts: ['É mais seguro por padrão', 'É stateless — o servidor não precisa armazenar estado', 'Nunca expira', 'Não precisa de assinatura'],
+      correct: 1,
+      feedback: 'Correto! JWT é stateless: o token carrega as informações do usuário e o servidor só precisa verificar a assinatura, sem consultar banco de dados a cada request.'
+    },
+    {
+      q: 'Por que nunca combinar Access-Control-Allow-Origin: * com credentials: true?',
+      opts: [
+        'Porque é muito lento',
+        'Porque o browser bloqueia cookies nessa combinação',
+        'Porque permitiria que qualquer site faça requests autenticados em nome do usuário',
+        'Porque o HTTPS não suporta'
+      ],
+      correct: 2,
+      feedback: 'Exato! Qualquer site malicioso poderia fazer requests autenticados (com cookies/tokens do usuário) para sua API, caracterizando CSRF.'
+    },
+    {
+      q: 'O que é o Authorization Code Flow com PKCE?',
+      opts: [
+        'Um flow OAuth para apps mobile e SPA, onde o code_verifier substitui o client_secret',
+        'Um tipo de JWT com HMAC',
+        'Um protocolo de refresh token automático',
+        'Uma forma de armazenar tokens no localStorage de forma segura'
+      ],
+      correct: 0,
+      feedback: 'Correto! PKCE (Proof Key for Code Exchange) foi criado para SPAs e apps mobile que não podem guardar um client_secret de forma segura. O code_verifier é gerado na hora e provado via code_challenge.'
+    },
+    {
+      q: 'Onde é mais seguro armazenar um JWT no browser?',
+      opts: [
+        'localStorage — simples e conveniente',
+        'sessionStorage — mais seguro que localStorage',
+        'Cookie httpOnly — não acessível por JavaScript',
+        'Em uma variável global'
+      ],
+      correct: 2,
+      feedback: 'Cookie com flag httpOnly não é acessível via JavaScript, protegendo contra XSS. localStorage e sessionStorage são vulneráveis a ataques XSS.'
+    },
+    {
+      q: 'Qual é a diferença entre autenticação e autorização?',
+      opts: [
+        'São sinônimos no contexto de segurança web',
+        'Autenticação verifica QUEM você é; autorização verifica O QUE você pode fazer',
+        'Autorização verifica QUEM você é; autenticação verifica O QUE você pode fazer',
+        'Autenticação é para APIs; autorização é para browsers'
+      ],
+      correct: 1,
+      feedback: 'Autenticação (AuthN) = identidade. Autorização (AuthZ) = permissões. Primeiro você prova quem é, depois o sistema decide o que pode fazer.'
+    }
+  ],
+  perf: [
+    {
+      q: 'Qual Core Web Vital mede a estabilidade visual da página?',
+      opts: ['LCP', 'INP', 'CLS', 'FID'],
+      correct: 2,
+      feedback: 'CLS (Cumulative Layout Shift) mede o quanto os elementos da página se movem inesperadamente. Meta: < 0.1.'
+    },
+    {
+      q: 'Qual é a diferença entre debounce e throttle?',
+      opts: [
+        'Debounce executa imediatamente; throttle aguarda',
+        'Debounce aguarda silêncio por N ms antes de executar; throttle limita a 1 execução por N ms',
+        'São equivalentes, apenas com nomes diferentes',
+        'Throttle cancela execuções anteriores; debounce não'
+      ],
+      correct: 1,
+      feedback: 'Debounce: só executa após N ms sem novo evento (ideal para search). Throttle: garante no máximo 1 execução por intervalo (ideal para scroll/resize).'
+    },
+    {
+      q: 'Para um arquivo estático com hash no nome (ex: main.abc123.js), qual Cache-Control é ideal?',
+      opts: [
+        'Cache-Control: no-cache',
+        'Cache-Control: no-store',
+        'Cache-Control: public, max-age=31536000, immutable',
+        'Cache-Control: private, max-age=3600'
+      ],
+      correct: 2,
+      feedback: 'Como o hash muda a cada nova build, o conteúdo nunca muda para aquela URL. Podemos cachear por 1 ano com immutable — o browser nem vai tentar revalidar.'
+    },
+    {
+      q: 'O que são os 3 pilares da observabilidade?',
+      opts: [
+        'CPU, Memória, Disco',
+        'Frontend, Backend, Banco de dados',
+        'Logs, Métricas, Traces',
+        'Error rate, Latência, Throughput'
+      ],
+      correct: 2,
+      feedback: 'Logs (eventos discretos), Métricas (números ao longo do tempo) e Traces (rastreamento de uma request através de sistemas distribuídos) formam os 3 pilares.'
+    },
+    {
+      q: 'Qual percentil de latência é mais importante monitorar e por quê?',
+      opts: [
+        'p50 (mediana) — representa a experiência da maioria',
+        'Média — mais fácil de calcular',
+        'p99 — representa a pior experiência de 1% dos usuários, que pode ser sintomático de problemas reais',
+        'Máximo — o pior caso absoluto'
+      ],
+      correct: 2,
+      feedback: 'p99 (99º percentil) captura casos ruins sem ser distorcido por outliers extremos. A média esconde problemas quando há cauda longa.'
+    }
+  ],
+  seg: [
+    {
+      q: 'Qual é a #1 vulnerabilidade no OWASP Top 10 2021?',
+      opts: ['SQL Injection', 'XSS', 'Broken Access Control', 'Cryptographic Failures'],
+      correct: 2,
+      feedback: 'Broken Access Control subiu para #1. Ocorre quando usuários conseguem acessar recursos ou ações que não deveriam (ex: ver dados de outro usuário mudando o ID na URL).'
+    },
+    {
+      q: 'Como prevenir XSS ao renderizar conteúdo gerado pelo usuário no DOM?',
+      opts: [
+        'Usar innerHTML sempre que possível',
+        'Usar textContent em vez de innerHTML, ou sanitizar com DOMPurify se precisar de HTML',
+        'Encodar em base64 antes de inserir',
+        'Usar encodeURIComponent no conteúdo'
+      ],
+      correct: 1,
+      feedback: 'textContent trata tudo como texto, nunca interpreta HTML. Se precisar de HTML, use DOMPurify para sanitizar antes de usar innerHTML.'
+    },
+    {
+      q: 'O que é SSRF (Server-Side Request Forgery)?',
+      opts: [
+        'O servidor injeta scripts no cliente',
+        'O atacante forja requests CSRF do lado do servidor',
+        'O servidor é induzido a fazer requests HTTP para URLs controladas pelo atacante',
+        'Um ataque de força bruta em sessões do servidor'
+      ],
+      correct: 2,
+      feedback: 'SSRF: o atacante faz o servidor requisitar URLs internas (metadados de cloud, serviços internos). Ex: atacante passa URL interna como parâmetro de avatar e o servidor baixa esse recurso.'
+    },
+    {
+      q: 'Por que parameterized queries previnem SQL Injection?',
+      opts: [
+        'Porque escapam automaticamente todos os caracteres especiais',
+        'Porque o driver trata o input como dados, nunca como código SQL',
+        'Porque limitam o tamanho do input',
+        'Porque encriptam a query antes de enviar'
+      ],
+      correct: 1,
+      feedback: 'Em parameterized queries, o banco recebe a query e os parâmetros separados. O input do usuário nunca é interpretado como código SQL — é sempre tratado como dado.'
+    },
+    {
+      q: 'Qual header previne que sua página seja carregada em iframes de outros sites (clickjacking)?',
+      opts: [
+        'Content-Security-Policy: no-iframe',
+        'X-Frame-Options: DENY',
+        'Strict-Transport-Security',
+        'X-Content-Type-Options: nosniff'
+      ],
+      correct: 1,
+      feedback: 'X-Frame-Options: DENY impede que sua página seja embutida em qualquer iframe. Também pode ser controlado via CSP com frame-ancestors.'
+    }
+  ],
+  arq: [
+    {
+      q: 'Na Clean Architecture, qual camada pode importar quais?',
+      opts: [
+        'Qualquer camada pode importar qualquer outra',
+        'Camadas externas dependem das internas; Domain não pode importar nada de fora',
+        'Só a camada de infrastructure pode importar frameworks',
+        'Use Cases podem importar diretamente do banco de dados'
+      ],
+      correct: 1,
+      feedback: 'A regra de dependência da Clean Arch: dependências sempre apontam para dentro. Domain/Entities não importa nada. Use Cases só conhecem o Domain. Infrastructure conhece tudo.'
+    },
+    {
+      q: 'Qual fator do 12-Factor App trata sobre configuração?',
+      opts: ['Factor 2 — Dependencies', 'Factor 3 — Config', 'Factor 6 — Processes', 'Factor 11 — Logs'],
+      correct: 1,
+      feedback: 'Factor III: Config. Tudo que varia entre ambientes (dev, staging, prod) deve vir de variáveis de ambiente, não de arquivos commitados.'
+    },
+    {
+      q: 'Quando microsserviços são preferíveis ao monólito?',
+      opts: [
+        'Sempre — microsserviços são sempre melhores',
+        'Quando o projeto está começando e a equipe é pequena',
+        'Quando há necessidade de escalar partes independentes e o time é grande o suficiente para operar distribuído',
+        'Quando não há orçamento para infraestrutura complexa'
+      ],
+      correct: 2,
+      feedback: 'Microsserviços introduzem complexidade de rede, distributed tracing, consistência eventual. Só compensa quando os benefícios de escala e independência de deploy superam essa complexidade.'
+    },
+    {
+      q: 'O que é "Disposability" no 12-Factor App?',
+      opts: [
+        'A capacidade de deletar logs automaticamente',
+        'Startup rápido e shutdown gracioso (SIGTERM tratado), favorecendo robustez',
+        'Poder descartar containers com estado',
+        'Garantir que variáveis de ambiente podem ser removidas sem reiniciar'
+      ],
+      correct: 1,
+      feedback: 'Factor IX — Disposability: processos devem iniciar rápido e desligar graciosamente (finalizando requests em andamento ao receber SIGTERM). Isso permite deploys e escala ágeis.'
+    },
+    {
+      q: 'Qual é a diferença entre Clean Architecture e Onion Architecture?',
+      opts: [
+        'São arquiteturas completamente diferentes sem relação',
+        'São essencialmente o mesmo conceito (camadas concêntricas com dependências apontando para o centro), com terminologias ligeiramente diferentes',
+        'Onion não tem camada de domínio',
+        'Clean Arch é para frontend, Onion é para backend'
+      ],
+      correct: 1,
+      feedback: 'Ambas seguem o mesmo princípio: o domínio no centro, dependências apontando para dentro. Onion Architecture foi formalizada por Jeffrey Palermo e Clean Architecture por Robert C. Martin — conceitos muito similares.'
+    }
+  ],
+  signals: [
+    {
+      q: 'Quais são os 4 Golden Signals do Google SRE?',
+      opts: [
+        'CPU, Memória, Disco, Rede',
+        'Latência, Tráfego, Erros, Saturação',
+        'Disponibilidade, Latência, Throughput, Custo',
+        'p50, p95, p99, p100'
+      ],
+      correct: 1,
+      feedback: 'Latência (tempo de resposta), Tráfego (volume de requests), Erros (taxa de falhas) e Saturação (utilização dos recursos). Esses 4 cobrem a saúde de qualquer serviço.'
+    },
+    {
+      q: 'Por que a latência de erros deve ser medida separadamente da latência de sucesso?',
+      opts: [
+        'Não precisa ser separada — é mais simples juntar tudo',
+        'Porque um erro 500 rápido pode mascarar um problema real, parecendo "boa latência"',
+        'Porque erros não têm latência',
+        'Porque os erros são sempre mais lentos'
+      ],
+      correct: 1,
+      feedback: 'Um serviço que retorna 500 em 5ms parece ter "boa latência" se misturarmos tudo. Mas está falhando. Medir separado dá clareza sobre a real experiência dos usuários bem-sucedidos.'
+    },
+    {
+      q: 'O que o signal "Saturação" indica sobre um serviço?',
+      opts: [
+        'Quantas requests por segundo o serviço processa',
+        'O quão "cheio" está — CPU, memória, conexões de DB — e risco iminente de degradação',
+        'Quantos erros 5xx ocorreram',
+        'A latência média das últimas 24h'
+      ],
+      correct: 1,
+      feedback: 'Saturação prevê problemas antes de acontecerem. Alta utilização de CPU ou connection pool cheio → latência vai aumentar em breve. É um sinal preventivo.'
+    },
+    {
+      q: 'O que é um SLO (Service Level Objective)?',
+      opts: [
+        'Um contrato legal com o cliente',
+        'Uma meta interna de qualidade de serviço (ex: 99.9% de disponibilidade, p99 < 500ms)',
+        'O mesmo que SLA',
+        'Uma ferramenta de monitoramento'
+      ],
+      correct: 1,
+      feedback: 'SLO é a meta interna. SLA é o contrato com o cliente (penalidades se não atingido). Você define SLOs mais agressivos que o SLA para ter margem de erro (error budget).'
+    }
+  ],
+  git: [
+    {
+      q: 'No Git Flow, de qual branch deve sair um hotfix?',
+      opts: ['develop', 'feature/qualquer', 'main (produção)', 'release'],
+      correct: 2,
+      feedback: 'Hotfix sai do main (produção) porque precisa corrigir o que está em produção agora. Após o fix, é mergeado tanto no main (com tag) quanto no develop.'
+    },
+    {
+      q: 'Qual é o tipo de commit para uma nova funcionalidade no Conventional Commits?',
+      opts: ['fix:', 'chore:', 'feat:', 'refactor:'],
+      correct: 2,
+      feedback: 'feat: é para novas funcionalidades. fix: é para correções de bug. Usar feat! (com exclamação) indica breaking change.'
+    },
+    {
+      q: 'Qual é a vantagem do Trunk-Based Development sobre o Git Flow?',
+      opts: [
+        'Branches vivem mais tempo, facilitando features grandes',
+        'Integração mais frequente ao trunk evita "merge hell" e acelera o feedback do CI',
+        'Não precisa de CI/CD',
+        'Branches de hotfix são mais fáceis de gerenciar'
+      ],
+      correct: 1,
+      feedback: 'Trunk-Based Dev: branches curtas (horas/dias) integradas frequentemente ao main. Isso reduz conflitos de merge e mantém o código sempre integrável. Requer feature flags para features incompletas.'
+    },
+    {
+      q: 'O que significa "rebase" antes de abrir um PR?',
+      opts: [
+        'Deletar seus commits e recomeçar',
+        'Reaplicar seus commits em cima da versão mais recente do branch base, mantendo histórico linear',
+        'Fazer squash de todos os commits em um só',
+        'Fazer merge do branch base nos seus commits'
+      ],
+      correct: 1,
+      feedback: 'git rebase origin/main reaplica seus commits em cima do último estado do main. Resultado: histórico linear sem merge commits desnecessários, e conflitos resolvidos antes do PR.'
+    },
+    {
+      q: 'Por que protected branches + required checks são importantes?',
+      opts: [
+        'Para que ninguém precise fazer code review',
+        'Para garantir que nenhum código entre em main sem passar por CI e aprovação — evita regressões em produção',
+        'Para bloquear deploys automáticos',
+        'Para que só o tech lead possa fazer commit'
+      ],
+      correct: 1,
+      feedback: 'Protected branches garantem que todo código passa pelo pipeline de CI (lint, tests, build) e por pelo menos um code reviewer antes de chegar em produção.'
+    }
+  ],
+  testes: [
+    {
+      q: 'Por que a pirâmide de testes sugere mais testes unitários que E2E?',
+      opts: [
+        'Porque testes unitários são mais fáceis de escrever',
+        'Porque testes E2E não funcionam',
+        'Testes unitários são rápidos e isolados; E2E são lentos, frágeis e caros de manter',
+        'Porque unit tests cobrem mais cenários'
+      ],
+      correct: 2,
+      feedback: 'Testes unitários rodam em ms, são determinísticos e fáceis de debugar. E2E levam segundos/minutos, dependem de browser, rede e estado — são frágeis. Use E2E para fluxos críticos.'
+    },
+    {
+      q: 'No TDD, qual é a ordem correta?',
+      opts: ['Green → Red → Refactor', 'Refactor → Red → Green', 'Red → Green → Refactor', 'Green → Refactor → Red'],
+      correct: 2,
+      feedback: 'Red (escreve teste que falha), Green (código mínimo para passar), Refactor (melhora sem quebrar). Nunca pule o Red — garantir que o teste falha antes é o que comprova que ele testa algo real.'
+    },
+    {
+      q: 'Qual é a diferença entre Mock e Stub?',
+      opts: [
+        'São a mesma coisa com nomes diferentes',
+        'Stub retorna respostas pré-definidas; Mock adiciona verificação de como foi chamado',
+        'Mock é para banco de dados; Stub é para HTTP',
+        'Stub verifica chamadas; Mock apenas substitui'
+      ],
+      correct: 1,
+      feedback: 'Stub: substitui dependência com resposta certa, sem verificar se/como foi chamado. Mock: além de substituir, verifica expectativas (foi chamado? Com que args? Quantas vezes?).'
+    },
+    {
+      q: 'O que significa "coverage" de 100% e por que não é um objetivo em si?',
+      opts: [
+        '100% coverage garante que não há bugs',
+        'Coverage mede linhas executadas pelos testes — você pode ter 100% com testes ruins que não verificam nada útil',
+        '100% coverage é sempre o objetivo ideal de qualquer projeto',
+        'Coverage indica a performance dos testes'
+      ],
+      correct: 1,
+      feedback: 'Coverage mede se o código foi EXECUTADO, não se foi VERIFICADO corretamente. Um teste pode passar por uma linha sem nenhum assert significativo. Use coverage como guia, não como meta.'
+    },
+    {
+      q: 'O que é um "Fake" no contexto de test doubles?',
+      opts: [
+        'Um mock que simula falhas',
+        'Uma implementação alternativa simplificada que funciona de verdade (ex: InMemoryRepository)',
+        'Um stub que lança exceções',
+        'Um spy que registra chamadas'
+      ],
+      correct: 1,
+      feedback: 'Fake é uma implementação real mas simplificada. Ex: InMemoryRepository implementa a mesma interface do repositório real mas guarda tudo em memória, sem DB. Funciona de verdade, só não persiste entre processos.'
+    }
+  ],
+  cicd: [
+    {
+      q: 'Qual é a diferença entre Continuous Delivery e Continuous Deployment?',
+      opts: [
+        'São sinônimos',
+        'Delivery requer aprovação manual para produção; Deployment faz deploy automático a cada merge',
+        'Deployment é mais seguro que Delivery',
+        'Delivery é para código; Deployment é para infraestrutura'
+      ],
+      correct: 1,
+      feedback: 'Continuous Delivery: código sempre pronto para deploy mas requer aprovação humana. Continuous Deployment: vai direto para produção automaticamente. Deployment exige confiança alta no pipeline.'
+    },
+    {
+      q: 'O que é uma estratégia de deploy Canary?',
+      opts: [
+        'Deploy que só acontece de madrugada',
+        'Nova versão recebe % crescente de tráfego, permitindo monitorar antes de 100%',
+        'Deploy que substitui 100% instantaneamente com rollback automático',
+        'Deploy apenas para usuários internos'
+      ],
+      correct: 1,
+      feedback: 'Canary: começa com 1-5% do tráfego na nova versão, monitora métricas, aumenta gradualmente. Se algo der errado, só uma fração dos usuários foi afetada — rollback é simples.'
+    },
+    {
+      q: 'Qual é a vantagem de usar imagens Docker imutáveis no CD?',
+      opts: [
+        'São mais leves que código source',
+        'A mesma imagem buildada e testada no CI vai para produção — sem surpresas de ambiente',
+        'Imagens Docker reduzem o tempo de build',
+        'Permitem deploy sem CI'
+      ],
+      correct: 1,
+      feedback: 'Imutabilidade: a imagem Docker tagueada com o SHA do commit é exatamente o que foi testado. Não há risco de o ambiente de produção ter alguma dependência diferente do que foi testado.'
+    },
+    {
+      q: 'O que são Feature Flags e qual problema resolvem?',
+      opts: [
+        'Flags no .gitignore para ignorar features inacabadas',
+        'Configurações que desacoplam deploy de release — código vai para prod mas feature fica desligada até estar pronta',
+        'Flags de CSS para features visuais',
+        'Configurações de CI para habilitar/desabilitar steps do pipeline'
+      ],
+      correct: 1,
+      feedback: 'Feature Flags permitem: deployar código incompleto com segurança, fazer rollout gradual, testes A/B e rollback instantâneo sem novo deploy. Desacoplam quando o código vai para prod de quando a feature é liberada.'
+    },
+    {
+      q: 'Por que é importante ter um plano de rollback no CD?',
+      opts: [
+        'Não é importante se os testes estiverem bons',
+        'Porque qualquer deploy pode introduzir um bug que só aparece em produção — rollback rápido limita o impacto',
+        'Por exigência de compliance sempre',
+        'Só é necessário para deploys de banco de dados'
+      ],
+      correct: 1,
+      feedback: 'Mesmo com ótimos testes, bugs de produção acontecem (dados reais, escala real, edge cases). Rollback rápido minimiza o blast radius. Blue/Green e Canary facilitam rollback, mas qualquer estratégia precisa do plano.'
+    }
+  ]
+}
+
+// ===== QUIZ ENGINE =====
+const quizState = {}
+
+function initQuiz(id) {
+  const data = quizData[id]
+  if (!data) return
+  quizState[id] = { answered: 0, correct: 0, total: data.length }
+  const wrap = document.getElementById('quiz-' + id)
+  wrap.innerHTML = ''
+
+  data.forEach((q, qi) => {
+    const el = document.createElement('div')
+    el.className = 'q-item'
+    el.id = `qi-${id}-${qi}`
+    el.innerHTML = `
+      <div class="q-num">Questão ${qi + 1} de ${data.length}</div>
+      <div class="q-text">${q.q}</div>
+      <div class="q-options">
+        ${q.opts.map((o, oi) => `<button class="q-opt" onclick="answerQ('${id}',${qi},${oi})">${o}</button>`).join('')}
+      </div>
+      <div class="q-feedback" id="qf-${id}-${qi}"></div>
+    `
+    wrap.appendChild(el)
+  })
+
+  const scoreEl = document.createElement('div')
+  scoreEl.className = 'quiz-score'
+  scoreEl.id = `qscore-${id}`
+  scoreEl.innerHTML = `
+    <div class="qs-label">Resultado Final</div>
+    <div class="qs-bar"><div class="qs-fill" id="qs-fill-${id}" style="width:0%"></div></div>
+    <div class="qs-text" id="qs-text-${id}"></div>
+  `
+  wrap.appendChild(scoreEl)
+}
+
+function answerQ(id, qi, chosen) {
+  const data = quizData[id]
+  const q = data[qi]
+  const itemEl = document.getElementById(`qi-${id}-${qi}`)
+  const opts = itemEl.querySelectorAll('.q-opt')
+  const feedback = document.getElementById(`qf-${id}-${qi}`)
+  const isCorrect = chosen === q.correct
+
+  opts.forEach((opt, i) => {
+    opt.classList.add('disabled')
+    opt.onclick = null
+    if (i === q.correct) opt.classList.add('correct')
+    else if (i === chosen && !isCorrect) opt.classList.add('wrong')
+  })
+
+  feedback.textContent = (isCorrect ? '✓ ' : '✗ ') + q.feedback
+  feedback.className = 'q-feedback visible ' + (isCorrect ? 'ok' : 'ko')
+
+  const state = quizState[id]
+  state.answered++
+  if (isCorrect) state.correct++
+
+  if (state.answered === state.total) showFinalScore(id)
+}
+
+function showFinalScore(id) {
+  const state = quizState[id]
+  const pct = Math.round((state.correct / state.total) * 100)
+  const scoreEl = document.getElementById(`qscore-${id}`)
+  document.getElementById(`qs-fill-${id}`).style.width = pct + '%'
+  const emoji = pct >= 80 ? '🟢' : pct >= 50 ? '🟡' : '🔴'
+  document.getElementById(`qs-text-${id}`).textContent = `${emoji} ${state.correct}/${state.total} corretas (${pct}%)`
+  scoreEl.classList.add('visible')
+  scoreEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+}
+
+function resetQuiz(id) {
+  quizState[id] = null
+  initQuiz(id)
+}
+
+// ===== INIT ALL QUIZZES =====
+Object.keys(quizData).forEach(initQuiz)
+</script>
+</body>
+</html>
