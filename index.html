@@ -223,6 +223,7 @@
   <a href="#perf">Performance</a>
   <a href="#callstack">Call Stack</a>
   <a href="#browser">Navegadores</a>
+  <a href="#cache">Cache</a>
 </nav>
 
 <header>
@@ -477,58 +478,522 @@
     </div>
   </div>
 
-  <!-- Design Patterns -->
+  <!-- Design Patterns — CRIACIONAIS -->
   <div class="card">
-    <h3>Design Patterns</h3>
+    <h3>Padrões Criacionais <span class="badge">GoF — Instanciação de Objetos</span></h3>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(this,'dp-resumo')">Resumo</button>
-      <button class="tab-btn" onclick="switchTab(this,'dp-analogia')">Analogia</button>
-      <button class="tab-btn" onclick="switchTab(this,'dp-perguntas')">Perguntas Expert</button>
+      <button class="tab-btn active" onclick="switchTab(this,'cri-visao')">Visão Geral</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-singleton')">Singleton</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-factory')">Factory Method</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-abstract')">Abstract Factory</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-builder')">Builder</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-prototype')">Prototype</button>
+      <button class="tab-btn" onclick="switchTab(this,'cri-perguntas')">Perguntas Expert</button>
     </div>
-    <div id="dp-resumo" class="tab-pane active block-points">
-      <div class="subtopic"><span class="subtopic-title">Criacionais</span>
-        <ul>
-          <li><strong>Singleton:</strong> uma única instância global controlada.</li>
-          <li><strong>Factory Method:</strong> subclasse decide qual objeto criar.</li>
-          <li><strong>Abstract Factory:</strong> famílias de objetos sem especificar classes concretas.</li>
-          <li><strong>Builder:</strong> constrói objetos complexos passo a passo.</li>
-          <li><strong>Prototype:</strong> clona objetos existentes.</li>
-        </ul>
-      </div>
-      <div class="subtopic"><span class="subtopic-title">Estruturais</span>
-        <ul>
-          <li><strong>Adapter:</strong> converte interface incompatível.</li>
-          <li><strong>Decorator:</strong> adiciona comportamento sem alterar a classe.</li>
-          <li><strong>Facade:</strong> simplifica subsistema complexo com interface unificada.</li>
-          <li><strong>Proxy:</strong> controla acesso a um objeto (lazy, segurança, cache).</li>
-          <li><strong>Composite:</strong> trata objetos e composições uniformemente (árvores).</li>
-        </ul>
-      </div>
-      <div class="subtopic"><span class="subtopic-title">Comportamentais</span>
-        <ul>
-          <li><strong>Observer:</strong> notifica dependentes de mudanças de estado.</li>
-          <li><strong>Strategy:</strong> encapsula algoritmos intercambiáveis.</li>
-          <li><strong>Command:</strong> encapsula ações como objetos (undo, queue).</li>
-          <li><strong>Chain of Responsibility:</strong> passa request por cadeia de handlers.</li>
-          <li><strong>Template Method:</strong> define esqueleto de algoritmo, subclasses preenchem.</li>
-          <li><strong>State:</strong> altera comportamento quando estado interno muda.</li>
-          <li><strong>Iterator:</strong> percorre coleção sem expor estrutura interna.</li>
-        </ul>
-      </div>
+
+    <div id="cri-visao" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        Padrões criacionais abstraem o processo de instanciação, tornando o sistema independente de como objetos são criados, compostos e representados. O objetivo é reduzir o acoplamento entre o código cliente e as classes concretas que ele precisa instanciar.
+      </p>
+      <ul>
+        <li><strong>Singleton</strong> — instância única por processo; acesso global controlado. Custo: dificulta testes, mascara acoplamento implícito, não funciona como "global" em multi-processo.</li>
+        <li><strong>Factory Method</strong> — a superclasse define a interface de criação; subclasses decidem qual classe concreta instanciar. Desacopla criador de produto sem romper a hierarquia.</li>
+        <li><strong>Abstract Factory</strong> — escala Factory Method para <em>famílias</em> de produtos relacionados. Garante compatibilidade entre os produtos criados (ex: todos do mesmo tema visual).</li>
+        <li><strong>Builder</strong> — constrói objetos complexos passo a passo via uma interface fluente ou por um Diretor. Elimina "construtores telescópicos" com dezenas de parâmetros opcionais.</li>
+        <li><strong>Prototype</strong> — cria novos objetos clonando um existente. O próprio objeto é responsável pela cópia, respeitando campos privados. Alternativa à subclassificação só para configurações diferentes.</li>
+      </ul>
+      <p style="margin-top:.75rem;font-size:.85rem;color:var(--muted);">
+        <strong>Guia de escolha rápido:</strong> 1 instância → Singleton · subclasse decide o tipo → Factory Method · família de produtos compatíveis → Abstract Factory · muitos parâmetros opcionais → Builder · clonar configurações existentes → Prototype.
+      </p>
     </div>
-    <div id="dp-analogia" class="tab-pane analogy-box">
-      <span class="emoji">🏗️</span>
-      <strong>Criacionais:</strong> como você pede uma pizza — pelo cardápio (Factory), personalizada item a item (Builder), ou copia uma já pronta (Prototype).<br><br>
-      <strong>Estruturais:</strong> um adaptador de tomada (Adapter), uma embalagem de presente que adiciona algo ao produto (Decorator), um gerente que faz ligações pra você (Facade).<br><br>
-      <strong>Comportamentais:</strong> um feed de notícias que avisa seguidores (Observer), uma mochila que adapta transporte dependendo do meio (Strategy), um controle remoto que grava comandos para executar depois (Command).
+
+    <div id="cri-singleton" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Garantir que uma classe tenha exatamente uma instância e prover um ponto de acesso global a ela.</li>
+        <li><strong>Problema:</strong> Recursos compartilhados que não podem ter múltiplas instâncias (pool de conexões, logger, configuração global, registro de serviços) precisam de controle centralizado de instanciação — o construtor público não é suficiente.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          ① Construtor privado — bloqueia <code>new</code> externo.<br>
+          ② Campo estático privado <code>instance</code> armazena a instância.<br>
+          ③ Método estático público <code>getInstance()</code>: cria na primeira chamada (lazy init) e retorna sempre a mesma instância.
+        </li>
+        <li>
+          <strong>Thread Safety (implementações):</strong><br>
+          &nbsp;&nbsp;• <em>Synchronized method</em> — seguro, mas gargalo em alta concorrência.<br>
+          &nbsp;&nbsp;• <em>Double-Checked Locking + <code>volatile</code></em> — lazy + performático (Java/C++).<br>
+          &nbsp;&nbsp;• <em>Initialization-on-demand holder</em> — usa garantia do class loader; sem lock explícito (Java).<br>
+          &nbsp;&nbsp;• <em>Enum Singleton</em> — proof against serialization e reflection attacks (Java).<br>
+          &nbsp;&nbsp;• Módulo Python — por design, módulos são singletons no mesmo processo.
+        </li>
+        <li><strong>Quando usar:</strong> logger centralizado, pool de conexões, objeto de configuração, event bus, cache em memória compartilhado.</li>
+        <li><strong>Prós:</strong> instância única garantida; lazy initialization; controle sobre variáveis globais.</li>
+        <li>
+          <strong>Contras:</strong> viola SRP (gerencia instância + lógica própria); dificulta testes unitários — estado persiste entre testes, exige reset manual ou injeção de dependência; em serverless/workers, cada processo tem seu próprio heap → a "unicidade" é por processo, não por sistema; cria dependências implícitas invisíveis nas assinaturas dos métodos.
+        </li>
+        <li><strong>Relaciona-se com:</strong> Facade (frequentemente implementada como Singleton); Abstract Factory, Builder, Prototype podem ser Singletons.</li>
+      </ul>
     </div>
-    <div id="dp-perguntas" class="tab-pane questions">
+
+    <div id="cri-factory" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Definir uma interface para criar um objeto em uma superclasse, mas deixar subclasses decidirem qual classe concreta instanciar.</li>
+        <li><strong>Problema:</strong> Um framework ou biblioteca precisa criar objetos mas não pode (ou não deve) conhecer os tipos concretos — eles serão definidos pelo usuário. Usar <code>new ProdutoConcreto()</code> cria acoplamento rígido entre criador e produto.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Produto</strong> — interface comum a todos os objetos produzidos.<br>
+          &nbsp;&nbsp;• <strong>Produtos Concretos</strong> — implementações específicas da interface.<br>
+          &nbsp;&nbsp;• <strong>Criador</strong> — declara o <em>factory method</em> abstrato ou com impl. padrão; opera sobre o produto via interface; a criação <strong>não é</strong> a responsabilidade principal do Criador.<br>
+          &nbsp;&nbsp;• <strong>Criadores Concretos</strong> — sobrescrevem o factory method para retornar o produto adequado.
+        </li>
+        <li>
+          <strong>Factory Method vs. Simple Factory:</strong> Simple Factory é apenas um método estático com <code>if/switch</code> — não é padrão GoF, viola OCP (novo tipo = modificar o método). Factory Method usa herança: novo tipo = nova subclasse do Criador, sem modificar o código existente.
+        </li>
+        <li><strong>Quando usar:</strong> tipo exato do objeto a criar é desconhecido em design time; permitir que usuários de framework estendam componentes internos; economizar recursos reutilizando objetos existentes em um pool.</li>
+        <li><strong>Prós:</strong> desacopla Criador de Produto concreto (SRP); adicionar novos produtos sem modificar o Criador (OCP); código extensível por herança.</li>
+        <li><strong>Contras:</strong> proliferação de subclasses para cada novo tipo de produto; pode ser excessivo onde um simples mapa de registro (<code>Map&lt;String, Supplier&gt;</code>) resolveria.</li>
+        <li><strong>Relaciona-se com:</strong> Abstract Factory (usa Factory Methods internamente), Template Method (factory method pode ser uma etapa), Prototype (alternativa sem herança quando clonar basta).</li>
+      </ul>
+    </div>
+
+    <div id="cri-abstract" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Produzir famílias de objetos relacionados ou dependentes sem especificar suas classes concretas.</li>
+        <li><strong>Problema:</strong> O código precisa criar múltiplos objetos relacionados que devem ser compatíveis entre si (UI cross-platform, temas, drivers de banco). Instanciar produtos concretos diretamente impede trocar a família inteira com uma única decisão.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Produtos Abstratos</strong> — interface para cada tipo de produto distinto (<code>Button</code>, <code>Checkbox</code>).<br>
+          &nbsp;&nbsp;• <strong>Produtos Concretos</strong> — implementações agrupadas por família (<code>WinButton</code>, <code>MacButton</code>).<br>
+          &nbsp;&nbsp;• <strong>Fábrica Abstrata</strong> — interface com um factory method por tipo de produto.<br>
+          &nbsp;&nbsp;• <strong>Fábricas Concretas</strong> — uma por família; garantem compatibilidade interna.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — recebe a fábrica por injeção de dependência; opera apenas sobre interfaces abstratas.
+        </li>
+        <li>
+          <strong>Abstract Factory vs. Factory Method:</strong> FM usa herança (um Criador por produto); AF usa composição (uma fábrica por família de produtos). Use FM para 1 tipo de produto variável; AF quando vários tipos precisam variar juntos e de forma consistente.
+        </li>
+        <li><strong>Quando usar:</strong> código independente de como produtos são criados/compostos; garantia de compatibilidade entre produtos da mesma família; troca de família de produtos em runtime via configuração.</li>
+        <li><strong>Prós:</strong> compatibilidade garantida entre produtos da mesma família; SRP e OCP para novas famílias; cliente desacoplado de implementações concretas.</li>
+        <li><strong>Contras:</strong> adicionar um novo <em>tipo</em> de produto (não uma família) exige modificar a interface abstrata e <em>todas</em> as fábricas concretas — viola OCP nessa dimensão.</li>
+        <li><strong>Relaciona-se com:</strong> Factory Method (AF implementada com FMs), Singleton (fábricas são frequentemente singletons), Bridge (AF pode criar implementações para Bridge), Prototype (alternativa — registro de protótipos por família).</li>
+      </ul>
+    </div>
+
+    <div id="cri-builder" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Separar a construção de um objeto complexo de sua representação, permitindo que o mesmo processo de construção crie representações diferentes.</li>
+        <li>
+          <strong>Problema:</strong> Dois cenários clássicos:<br>
+          ① <em>Construtor telescópico</em> — <code>new Casa(2, 3, true, false, null, "vermelho", 120, ...)</code>: ilegível, frágil, qualquer novo campo quebra todos os call sites.<br>
+          ② <em>Explosão de subclasses</em> — criar <code>CasaComPiscina</code>, <code>CasaComGaragem</code>, <code>CasaComPiscinaEGaragem</code>... combinações crescem exponencialmente.
+        </li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Builder</strong> — interface com um método por etapa de construção.<br>
+          &nbsp;&nbsp;• <strong>Builders Concretos</strong> — implementam as etapas produzindo representações diferentes; têm método <code>getResult()</code>.<br>
+          &nbsp;&nbsp;• <strong>Diretor</strong> (opcional) — encapsula sequências de etapas reutilizáveis; desacopla o cliente da ordem de construção.<br>
+          &nbsp;&nbsp;• <strong>Produto</strong> — o objeto resultante; Builders diferentes podem produzir tipos sem interface comum.
+        </li>
+        <li>
+          <strong>Builder Fluente:</strong> cada método de etapa retorna <code>this</code>, permitindo encadeamento: <code>builder.setParedes(2).setTeto("plano").addJanelas(4).build()</code>. Muito usado em ORMs (<code>QueryBuilder</code>), HTTP clients, SDKs e DSLs. O método <code>build()</code> pode validar invariantes antes de instanciar.
+        </li>
+        <li><strong>Quando usar:</strong> construtores com ≥ 4 parâmetros, especialmente opcionais; múltiplas representações do mesmo objeto com processo de construção comum; construção recursiva/incremental de estruturas (árvores Composite).</li>
+        <li><strong>Prós:</strong> construção passo a passo e configurável; reutilização do código de construção via Diretor; SRP — lógica de construção isolada; permite criar objetos imutáveis (<code>build()</code> valida antes de criar).</li>
+        <li><strong>Contras:</strong> complexidade desnecessária para objetos simples; requer coordenação entre o cliente e a sequência correta de chamadas (mitigada pelo Diretor).</li>
+        <li><strong>Relaciona-se com:</strong> Composite (Builder excelente para construir árvores recursivas), Bridge (Diretor como abstração, Builders como implementações).</li>
+      </ul>
+    </div>
+
+    <div id="cri-prototype" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Criar novos objetos copiando protótipos existentes, sem fazer o código depender das classes concretas dos objetos copiados.</li>
+        <li>
+          <strong>Problema:</strong> Três obstáculos ao copiar diretamente:<br>
+          ① Campos privados são inacessíveis externamente.<br>
+          ② Requer conhecer a classe concreta do objeto → acoplamento.<br>
+          ③ Frequentemente você conhece apenas a interface, não a implementação.
+        </li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Interface Protótipo</strong> — declara método <code>clone()</code>.<br>
+          &nbsp;&nbsp;• <strong>Protótipos Concretos</strong> — implementam <code>clone()</code> internamente (acesso a campos privados via construtor de cópia: <code>new ConcretePrototype(this)</code>).<br>
+          &nbsp;&nbsp;• <strong>Registro de Protótipos</strong> (opcional) — catálogo de objetos pré-configurados com nomes/chaves; o cliente solicita uma cópia pelo nome sem conhecer a classe concreta.
+        </li>
+        <li>
+          <strong>Deep vs. Shallow Copy:</strong> cópia rasa copia referências (objetos aninhados são compartilhados — mutações afetam o original). Cópia profunda clone recursivamente os objetos referenciados — necessária quando o protótipo contém coleções ou objetos mutáveis. Referências circulares exigem tratamento especial (mapa de objetos já copiados).
+        </li>
+        <li><strong>Quando usar:</strong> independência de classes concretas é necessária; criar um objeto do zero é mais custoso que clonar um existente (objetos com estado calculado, resultados de I/O); reduzir subclasses criadas apenas para configurações diferentes.</li>
+        <li><strong>Prós:</strong> independência de classes concretas; elimina código repetitivo de inicialização; alternativa eficiente à subclassificação para configurações predefinidas.</li>
+        <li><strong>Contras:</strong> deep copy de objetos com referências circulares é complexo e propenso a erros sutis.</li>
+        <li><strong>Relaciona-se com:</strong> Abstract Factory (pode usar Prototype para criar produtos), Command (Prototype para salvar cópias no histórico de undo/redo), Composite + Decorator (Prototype facilita clonar estruturas compostas complexas).</li>
+      </ul>
+    </div>
+
+    <div id="cri-perguntas" class="tab-pane questions">
       <ol>
-        <li>Qual a diferença fundamental entre Decorator e Proxy? Dê um exemplo onde trocar um pelo outro causaria problemas.</li>
-        <li>Singleton em ambientes multi-thread ou multi-processo (ex.: serverless) — quais problemas surgem e como você os mitiga?</li>
-        <li>Abstract Factory vs. Factory Method: quando a escolha de um sobre o outro é arquiteturalmente significativa?</li>
-        <li>Como Observer se relaciona com Event Sourcing e CQRS? Onde os padrões convergem e onde divergem?</li>
-        <li>Cite um cenário em que usar um Design Pattern introduz mais complexidade do que resolve — e como você justificaria não usar o pattern nesse caso.</li>
+        <li>Singleton em ambiente serverless (AWS Lambda, Vercel Functions): por que a garantia de "instância única" não se aplica entre invocações? Como você projeta um pool de conexões de banco de dados nesse modelo sem desperdício nem race conditions?</li>
+        <li>Factory Method vs. Simple Factory: construa um exemplo de sistema de pagamentos onde a diferença entre os dois é arquiteturalmente significativa ao adicionar um novo método de pagamento — explique como cada abordagem escala e qual viola OCP.</li>
+        <li>Abstract Factory: ao adicionar um novo <em>tipo de produto</em> (ex: Tooltip) a uma AF já existente com 10 fábricas concretas, qual é o custo de mudança? Como o padrão Prototype com Registro pode ser uma alternativa mais extensível nesse caso?</li>
+        <li>Como você implementa validação de invariantes de negócio no Builder Fluente — por exemplo, garantir que <code>dataFim &gt; dataInicio</code> ou que campos obrigatórios estejam preenchidos — sem lançar exceções no meio da cadeia de chamadas?</li>
+        <li>Qual é a diferença entre cópia rasa e cópia profunda no contexto de Prototype? Descreva um bug sutil que ocorre quando um objeto clonado via shallow copy compartilha uma coleção mutável com o original — e como detectá-lo em testes.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Design Patterns — ESTRUTURAIS -->
+  <div class="card">
+    <h3>Padrões Estruturais <span class="badge">GoF — Composição de Classes e Objetos</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'est-visao')">Visão Geral</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-adapter')">Adapter</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-composite')">Composite</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-decorator')">Decorator</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-facade')">Facade</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-proxy')">Proxy</button>
+      <button class="tab-btn" onclick="switchTab(this,'est-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="est-visao" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        Padrões estruturais tratam da composição de classes e objetos para formar estruturas maiores. Eles usam herança e composição para montar interfaces e implementações flexíveis.
+      </p>
+      <ul>
+        <li><strong>Adapter</strong> — converte a interface de uma classe em outra interface esperada pelo cliente. Permite colaboração entre classes incompatíveis sem modificar nenhuma das duas.</li>
+        <li><strong>Bridge</strong> — separa uma abstração de sua implementação em hierarquias independentes. Preferível à herança quando tanto a abstração quanto a implementação precisam variar. <em>(GoF — menos comum em entrevistas)</em></li>
+        <li><strong>Composite</strong> — trata objetos individuais e composições uniformemente via interface comum. Ideal para estruturas em árvore (sistemas de arquivos, UI hierárquica, documentos).</li>
+        <li><strong>Decorator</strong> — adiciona comportamentos a objetos envolvendo-os em wrappers com a mesma interface. Alternativa à herança para extensão dinâmica em runtime.</li>
+        <li><strong>Facade</strong> — interface unificada e simplificada para um subsistema complexo. Reduz acoplamento entre cliente e subsistema; não elimina o subsistema.</li>
+        <li><strong>Flyweight</strong> — compartilha estado intrínseco (imutável) entre muitos objetos para economizar memória. <em>(GoF — foco em otimização de memória)</em></li>
+        <li><strong>Proxy</strong> — substituto que controla o acesso ao objeto real. Viabiliza lazy init, cache, controle de acesso, logging, execução remota sem modificar o objeto original.</li>
+      </ul>
+      <p style="margin-top:.75rem;font-size:.85rem;color:var(--muted);">
+        <strong>Confusões frequentes:</strong> Adapter muda a interface · Decorator mantém a interface e adiciona comportamento · Proxy mantém a interface e controla acesso · Facade cria uma nova interface simplificada para um subsistema.
+      </p>
+    </div>
+
+    <div id="est-adapter" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Converter a interface de uma classe em outra interface esperada pelo cliente. Permite que classes com interfaces incompatíveis colaborem.</li>
+        <li><strong>Problema:</strong> Você quer usar uma biblioteca ou classe legada, mas sua interface é incompatível com o que o restante do sistema espera. Modificar qualquer uma das partes não é viável (código de terceiro, múltiplos consumidores).</li>
+        <li>
+          <strong>Solução / Estrutura (duas variantes):</strong><br>
+          &nbsp;&nbsp;• <strong>Adaptador de Objeto (composição):</strong> o Adapter implementa a interface do Cliente e mantém uma referência ao Serviço incompatível. As chamadas ao Adapter são traduzidas e delegadas ao Serviço. Funciona com subclasses do Serviço; flexível.<br>
+          &nbsp;&nbsp;• <strong>Adaptador de Classe (herança múltipla):</strong> o Adapter herda de ambas as classes simultaneamente. Não precisa de wrapping — mais direto, mas requer herança múltipla (disponível em C++, não em Java/C#).
+        </li>
+        <li>
+          <strong>Two-Way Adapter:</strong> implementa as interfaces de ambas as partes simultaneamente — permite que qualquer uma use o Adapter, tornando-as intercambiáveis sem mudanças.
+        </li>
+        <li><strong>Quando usar:</strong> integrar código legado ou de terceiros com interface diferente da esperada; reutilizar subclasses sem duplicar código de conversão em cada uma.</li>
+        <li><strong>Prós:</strong> SRP — conversão separada da lógica de negócio; OCP — novos adapters sem modificar cliente ou serviço.</li>
+        <li><strong>Contras:</strong> complexidade extra; se você controla ambas as interfaces, adaptá-las diretamente é mais limpo.</li>
+        <li>
+          <strong>Vs. outros padrões:</strong><br>
+          &nbsp;&nbsp;• <strong>Facade</strong> — define uma <em>nova</em> interface simplificada para todo um subsistema.<br>
+          &nbsp;&nbsp;• <strong>Decorator</strong> — mantém a interface original e adiciona comportamento.<br>
+          &nbsp;&nbsp;• <strong>Proxy</strong> — mantém a interface original e controla acesso.
+        </li>
+      </ul>
+    </div>
+
+    <div id="est-composite" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Compor objetos em estruturas de árvore para representar hierarquias parte-todo. Permite tratar objetos individuais e composições de forma uniforme.</li>
+        <li><strong>Problema:</strong> Um sistema de encomendas tem caixas que contêm produtos e outras caixas. Calcular o preço total exige lógica condicional para distinguir caixas de produtos — e vai ficando mais complexo com mais níveis. O cliente não deveria precisar saber se está lidando com um produto simples ou uma cesta inteira.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Componente</strong> — interface comum com operações para folhas e contêineres (ex: <code>getPreco()</code>, <code>render()</code>).<br>
+          &nbsp;&nbsp;• <strong>Folha</strong> — elemento sem filhos; executa a operação diretamente.<br>
+          &nbsp;&nbsp;• <strong>Composite (Contêiner)</strong> — armazena uma coleção de Componentes (folhas ou outros Composites); delega a operação recursivamente e agrega resultados.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — opera exclusivamente via interface Componente; ignora se está falando com folha ou contêiner.
+        </li>
+        <li>
+          <strong>Decisão de design:</strong> a interface Componente deve incluir métodos de gerenciamento de filhos (<code>add/remove/getChildren</code>) ou apenas operações de negócio? Incluir na interface viola o princípio de segregação de interface para folhas; excluir exige downcasting. Escolha baseada no contexto — transparência vs. segurança de tipos.
+        </li>
+        <li><strong>Quando usar:</strong> hierarquias parte-todo (árvores); código que deve tratar elementos simples e compostos uniformemente; sistemas de arquivos, DOMs, UIs hierárquicas, ASTs, menus aninhados.</li>
+        <li><strong>Prós:</strong> polimorfismo e recursão simplificam trabalho com árvores; OCP para novos tipos de nós.</li>
+        <li><strong>Contras:</strong> interface comum pode ser muito genérica quando folhas e contêineres têm capacidades muito distintas; dificultar restrições de tipos (ex: proibir certos tipos como filhos).</li>
+        <li><strong>Relaciona-se com:</strong> Builder (ideal para construir árvores Composite), Iterator/Visitor (para percorrer a estrutura), Decorator (similar estruturalmente, mas adiciona responsabilidades em vez de agregar).</li>
+      </ul>
+    </div>
+
+    <div id="est-decorator" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Adicionar responsabilidades a objetos dinamicamente envolvendo-os em objetos decoradores com a mesma interface. Alternativa flexível à subclassificação.</li>
+        <li><strong>Problema:</strong> Uma classe de notificação precisa suportar combinações de canais (email + SMS + Slack). Criar uma subclasse por combinação gera explosão exponencial. Herança é estática — não permite trocar ou combinar comportamentos em runtime.</li>
+        <li>
+          <strong>Solução / Estrutura (5 participantes):</strong><br>
+          &nbsp;&nbsp;• <strong>Componente</strong> — interface comum (ex: <code>Notifier</code>).<br>
+          &nbsp;&nbsp;• <strong>Componente Concreto</strong> — implementação base (ex: <code>EmailNotifier</code>).<br>
+          &nbsp;&nbsp;• <strong>Decorador Base</strong> — implementa a interface e mantém referência ao Componente envolvido; delega todas as chamadas.<br>
+          &nbsp;&nbsp;• <strong>Decoradores Concretos</strong> — sobrescrevem métodos, executando comportamento extra antes/após delegar ao componente envolvido.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — responsável por montar a pilha de decoradores.
+        </li>
+        <li>
+          <strong>Empilhamento:</strong> <code>new SlackDecorator(new SMSDecorator(new EmailNotifier()))</code> — cada camada delega para a próxima e adiciona comportamento. A ordem importa — verifique se há dependências entre decoradores.
+        </li>
+        <li><strong>Quando usar:</strong> adicionar responsabilidades em runtime sem subclassificar; extensão impossível ou impraticável via herança (classes <code>final</code>); lógica estruturada em camadas opcionais e combináveis (compressão + criptografia + log em streams).</li>
+        <li><strong>Prós:</strong> extensão sem herança; add/remove em runtime; combinações infinitas de comportamentos; SRP — cada decorador faz uma coisa.</li>
+        <li><strong>Contras:</strong> difícil remover um decorador específico do meio da pilha; comportamento pode depender da ordem de empilhamento; muitos pequenos objetos podem dificultar debug.</li>
+        <li>
+          <strong>Vs. outros padrões:</strong><br>
+          &nbsp;&nbsp;• <strong>Proxy</strong> — mesma estrutura, mas controla <em>acesso</em> em vez de adicionar comportamento; ciclo de vida do serviço geralmente gerenciado pelo Proxy.<br>
+          &nbsp;&nbsp;• <strong>Composite</strong> — agrega filhos e agrega resultados; Decorator envolve um único componente e transforma o resultado.
+        </li>
+      </ul>
+    </div>
+
+    <div id="est-facade" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Fornecer uma interface simplificada para um subsistema complexo — uma "porta de entrada" que expõe apenas o que o cliente precisa.</li>
+        <li><strong>Problema:</strong> O código cliente precisa de apenas uma fração das funcionalidades de um subsistema complexo (biblioteca de vídeo, framework de ORM, sistema de autenticação). Trabalhar diretamente com todas as classes do subsistema cria acoplamento forte e dificulta substituição futura.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Facade</strong> — conhece o subsistema; redireciona chamadas do cliente para os objetos corretos; orquestra o fluxo sem expor detalhes.<br>
+          &nbsp;&nbsp;• <strong>Fachadas Adicionais</strong> — se a Facade crescer demais, extrai-se comportamento em fachadas secundárias especializadas.<br>
+          &nbsp;&nbsp;• <strong>Subsistema</strong> — conjunto de classes que realizam o trabalho real; não conhecem a Facade.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — se comunica exclusivamente com a Facade.
+        </li>
+        <li>
+          <strong>Atenção — Facade ≠ elimina o subsistema:</strong> a Facade é uma camada de conveniência; clientes avançados ainda podem acessar o subsistema diretamente se precisarem de controle fino. Isso a diferencia de uma API REST que substitui completamente o subsistema.
+        </li>
+        <li><strong>Quando usar:</strong> interface simples para subsistema complexo; estruturar o sistema em camadas com pontos de entrada bem definidos (Facade entre camadas); reduzir acoplamento entre subsistemas que precisam colaborar.</li>
+        <li><strong>Prós:</strong> isola o cliente da complexidade interna; facilita substituição do subsistema sem afetar clientes; ponto único de integração.</li>
+        <li><strong>Contras:</strong> risco de se tornar "God Object" acoplado a muitas classes; pode esconder problemas de design no subsistema em vez de corrigi-los.</li>
+        <li>
+          <strong>Vs. outros padrões:</strong><br>
+          &nbsp;&nbsp;• <strong>Adapter</strong> — converte interface existente; Facade cria uma nova.<br>
+          &nbsp;&nbsp;• <strong>Mediator</strong> — também centraliza comunicação, mas entre objetos que se conhecem mutuamente (coordenação bidirecional); Facade é unidirecional (cliente → subsistema).<br>
+          &nbsp;&nbsp;• <strong>Proxy</strong> — mesma interface do serviço; Facade cria interface nova simplificada.
+        </li>
+      </ul>
+    </div>
+
+    <div id="est-proxy" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Fornecer um substituto ou representante de outro objeto, controlando o acesso a ele.</li>
+        <li><strong>Problema:</strong> Você precisa adicionar comportamento ao acesso de um objeto (lazy init, cache, controle de acesso, logging, execução remota) sem modificar sua classe — seja porque é código de terceiros, seja para não violar SRP.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Interface do Serviço</strong> — interface que tanto o Serviço Real quanto o Proxy implementam (transparência para o cliente).<br>
+          &nbsp;&nbsp;• <strong>Serviço Real</strong> — contém a lógica de negócio útil.<br>
+          &nbsp;&nbsp;• <strong>Proxy</strong> — referência ao Serviço Real; processa antes/depois e delega.
+        </li>
+        <li>
+          <strong>Tipos de Proxy:</strong><br>
+          &nbsp;&nbsp;• <em>Virtual (Lazy)</em> — adia criação de objetos pesados até a primeira necessidade real.<br>
+          &nbsp;&nbsp;• <em>Protection</em> — controla acesso baseado em permissões/papéis.<br>
+          &nbsp;&nbsp;• <em>Remote</em> — representa objeto em outro processo/máquina (ex: stub RPC/gRPC).<br>
+          &nbsp;&nbsp;• <em>Caching</em> — armazena resultados de operações custosas; retorna cópia em cache nas demais chamadas.<br>
+          &nbsp;&nbsp;• <em>Logging</em> — registra chamadas sem alterar o serviço.<br>
+          &nbsp;&nbsp;• <em>Smart Reference</em> — conta referências ativas; libera recurso quando zerado.
+        </li>
+        <li><strong>Quando usar:</strong> lazy initialization de objetos pesados; controle de acesso sem modificar o serviço; cache transparente; logging/auditoria; comunicação com objetos remotos.</li>
+        <li><strong>Prós:</strong> controle transparente (cliente não sabe que há proxy); gerenciamento de ciclo de vida do serviço; OCP — comportamento extra sem modificar o serviço.</li>
+        <li><strong>Contras:</strong> latência adicional; complexidade extra com novas classes; pode dar falsa sensação de que o serviço é barato quando na verdade é caro.</li>
+        <li>
+          <strong>Proxy vs. Decorator:</strong> estrutura idêntica. Diferença semântica: Proxy gerencia o ciclo de vida do serviço real e controla <em>quando/se</em> ele é acessado; Decorator adiciona <em>comportamentos</em> ao que já é acessado, com o cliente controlando a composição.
+        </li>
+      </ul>
+    </div>
+
+    <div id="est-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Adapter, Decorator e Proxy têm estruturas de implementação muito semelhantes — todos envolvem um objeto e delegam chamadas. Como você diferencia os três em termos de <em>intenção</em>, <em>ciclo de vida do objeto envolvido</em> e <em>quem controla a composição</em>? Dê um exemplo onde trocar um pelo outro quebraria o design.</li>
+        <li>Você está projetando um sistema de autorização usando Proxy de proteção. Como você garante que o Proxy intercepta <em>todas</em> as formas de acesso ao serviço — incluindo chamadas internas da mesma classe — sem que o código de segurança vaze para o serviço real?</li>
+        <li>No padrão Composite, discuta a tensão entre <em>transparência</em> (incluir métodos de gerenciamento de filhos na interface Componente) e <em>segurança de tipos</em> (deixar esses métodos apenas no Composite). Qual abordagem você escolheria para um sistema de renderização de UI e por quê?</li>
+        <li>Em que cenário Facade pode se tornar um anti-padrão? Descreva como uma Facade bem-intencionada pode mascarar problemas de coesão no subsistema e dificultar testes de integração.</li>
+        <li>Como o padrão Decorator se comporta quando dois decoradores têm dependências entre si (ex: o decorador de criptografia deve vir antes do de compressão)? Como você codifica e documenta essa restrição de ordem sem criar acoplamento entre os decoradores?</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- Design Patterns — COMPORTAMENTAIS -->
+  <div class="card">
+    <h3>Padrões Comportamentais <span class="badge">GoF — Comunicação e Responsabilidade</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'com-visao')">Visão Geral</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-observer')">Observer</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-strategy')">Strategy</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-command')">Command</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-cor')">Chain of Responsibility</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-template')">Template Method</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-state')">State</button>
+      <button class="tab-btn" onclick="switchTab(this,'com-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="com-visao" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        Padrões comportamentais tratam de algoritmos e distribuição de responsabilidades entre objetos. Focam em como objetos se comunicam e colaboram sem criar acoplamento excessivo.
+      </p>
+      <ul>
+        <li><strong>Observer</strong> — mecanismo de assinatura pub/sub. Publicador notifica assinantes sobre eventos sem conhecê-los diretamente. Base de event buses, reactive programming e data binding.</li>
+        <li><strong>Strategy</strong> — família de algoritmos encapsulados em classes intercambiáveis. O contexto delega o algoritmo para a estratégia injetada. Substitui condicionais volumosos por polimorfismo.</li>
+        <li><strong>Command</strong> — encapsula um pedido como objeto com tudo necessário para executá-lo. Viabiliza: parametrização, enfileiramento, logging, undo/redo e transações.</li>
+        <li><strong>Chain of Responsibility</strong> — passa um request por uma cadeia de handlers até que um o processe. Desacopla remetente de receptores; permite composição dinâmica da cadeia.</li>
+        <li><strong>Template Method</strong> — define o esqueleto de um algoritmo na superclasse; subclasses preenchem etapas específicas sem alterar a estrutura geral. Usa herança.</li>
+        <li><strong>State</strong> — permite que um objeto altere comportamento quando seu estado muda. Parece que o objeto muda de classe. Substitui máquinas de estado baseadas em <code>switch</code>.</li>
+        <li><strong>Iterator</strong> — percorre elementos de uma coleção sem expor sua representação interna. Separa o algoritmo de travessia da estrutura de dados. <em>(amplamente nativo em linguagens modernas)</em></li>
+        <li><strong>Mediator</strong> — centraliza comunicações entre objetos num objeto mediador. Reduz dependências caóticas entre componentes, mas concentra lógica. <em>(relação com Event Bus e CQRS)</em></li>
+        <li><strong>Memento</strong> — captura e externaliza o estado interno de um objeto sem violar encapsulamento. Permite restaurar estados anteriores — base de undo/redo.</li>
+        <li><strong>Visitor</strong> — separa algoritmos dos objetos sobre os quais operam. Adiciona novas operações sem modificar as classes dos elementos. Implementa <em>double dispatch</em>.</li>
+      </ul>
+    </div>
+
+    <div id="com-observer" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Definir um mecanismo de assinatura para notificar múltiplos objetos sobre eventos que ocorrem no objeto observado.</li>
+        <li><strong>Problema:</strong> Um objeto precisa notificar outros quando muda de estado, mas não deve conhecer quem são esses outros (nem quantos são). Polling é ineficiente; notificação direta cria acoplamento. O conjunto de dependentes é dinâmico.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Publicador (Subject)</strong> — mantém lista de assinantes; expõe <code>subscribe()</code>, <code>unsubscribe()</code> e <code>notify()</code>; notifica ao mudar de estado.<br>
+          &nbsp;&nbsp;• <strong>Interface Assinante</strong> — declara o método de atualização (<code>update(event)</code>).<br>
+          &nbsp;&nbsp;• <strong>Assinantes Concretos</strong> — implementam a reação; podem se inscrever/desinscrever dinamicamente.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — instancia publicadores e assinantes; registra os assinantes.
+        </li>
+        <li>
+          <strong>Push vs. Pull:</strong><br>
+          &nbsp;&nbsp;• <em>Push</em> — o publicador envia os dados no evento. Assinante não precisa consultar o sujeito; pode receber mais do que precisa.<br>
+          &nbsp;&nbsp;• <em>Pull</em> — o publicador notifica sem dados; assinante consulta o sujeito quando necessário. Assinante decide o que ler; mais flexível mas adiciona acoplamento ao sujeito.
+        </li>
+        <li>
+          <strong>Observer em sistemas modernos:</strong> o padrão é a base de Reactive Streams (RxJS, Project Reactor), Event Bus, data binding em frameworks (Vue reactivity, MobX), DOM events e WebSockets. Em arquiteturas distribuídas, equivale ao pub/sub de brokers (Kafka, RabbitMQ) — com garantias adicionais de durabilidade.
+        </li>
+        <li><strong>Quando usar:</strong> mudança em um objeto requer atualização de outros cujo número é desconhecido; observação temporária ou específica a contexto; desacoplamento entre publicador e assinantes.</li>
+        <li><strong>Prós:</strong> OCP — novos assinantes sem modificar publicador; relações estabelecidas em runtime; suporte a broadcast.</li>
+        <li><strong>Contras:</strong> ordem de notificação é indefinida por padrão; assinantes não removidos criam memory leaks; cascatas de notificação podem ser difíceis de depurar.</li>
+        <li><strong>Relaciona-se com:</strong> Mediator (alternativa quando a lógica de coordenação é complexa), Command (comandos como eventos), Event Sourcing (eventos persistidos, não apenas notificados).</li>
+      </ul>
+    </div>
+
+    <div id="com-strategy" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Definir uma família de algoritmos, encapsular cada um em uma classe e torná-los intercambiáveis. O cliente pode trocar o algoritmo independentemente dos clientes que o usam.</li>
+        <li><strong>Problema:</strong> Uma classe começa com um algoritmo e, ao longo do tempo, acumula variantes via condicionais (<code>if tipoRota == "carro"... else if "bicicleta"...</code>). Cada nova variante infla a classe, cria conflitos de merge e dificulta testes isolados.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Contexto</strong> — mantém referência a uma Estratégia via interface; delega a execução do algoritmo; expõe setter para troca em runtime.<br>
+          &nbsp;&nbsp;• <strong>Interface Strategy</strong> — declara o método de execução do algoritmo.<br>
+          &nbsp;&nbsp;• <strong>Estratégias Concretas</strong> — implementam variantes do algoritmo.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — instancia a estratégia e a injeta no contexto.
+        </li>
+        <li>
+          <strong>Strategy vs. condicionais:</strong> quando há 2–3 variantes simples e estáticas, condicionais são mais legíveis. Strategy compensa quando: as variantes são muitas; variam independentemente do contexto; precisam ser injetadas externamente (teste, configuração); ou serão adicionadas por terceiros sem modificar o código existente.
+        </li>
+        <li>
+          <strong>Strategy em linguagens funcionais:</strong> em JS/Python/Go, passar funções diretamente (funções de primeira classe) serve o mesmo propósito sem a cerimônia das classes. Strategy com classes brilha em OO estrito onde comportamento + estado são necessários.
+        </li>
+        <li><strong>Quando usar:</strong> trocar algoritmos em runtime; múltiplas classes que diferem apenas em comportamento; isolar lógica de negócio de detalhes de algoritmo; eliminar condicionais de seleção de algoritmo.</li>
+        <li><strong>Prós:</strong> troca em runtime; SRP — cada estratégia em sua classe; OCP — novas estratégias sem modificar o contexto; substitui herança por composição.</li>
+        <li><strong>Contras:</strong> cliente precisa conhecer as diferenças entre estratégias para escolher; overhead de classes para algoritmos simples.</li>
+        <li><strong>Vs. Template Method:</strong> Strategy usa composição — o algoritmo inteiro está na estratégia, trocável em runtime. Template Method usa herança — o esqueleto está na superclasse, partes nas subclasses, estático após compilação.</li>
+      </ul>
+    </div>
+
+    <div id="com-command" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Encapsular um pedido como objeto independente contendo toda a informação necessária para executá-lo. Permite parametrizar métodos com pedidos, enfileirar/logar pedidos e implementar operações reversíveis.</li>
+        <li><strong>Problema:</strong> Múltiplos pontos de entrada na UI (botão, menu, atalho, API) precisam disparar a mesma operação — duplicação de código e acoplamento direto entre camada de UI e lógica de negócio. Adicionar undo/redo ou enfileiramento de operações fica ainda mais complexo.</li>
+        <li>
+          <strong>Solução / Estrutura (5 participantes):</strong><br>
+          &nbsp;&nbsp;• <strong>Remetente (Invoker)</strong> — armazena referência ao comando; o aciona (não conhece o destinatário).<br>
+          &nbsp;&nbsp;• <strong>Interface Comando</strong> — declara método único <code>execute()</code>; opcionalmente <code>undo()</code>.<br>
+          &nbsp;&nbsp;• <strong>Comandos Concretos</strong> — implementam operações específicas; armazenam referência ao Destinatário + parâmetros.<br>
+          &nbsp;&nbsp;• <strong>Destinatário (Receiver)</strong> — contém a lógica de negócio real; não conhece o Remetente.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — cria Comandos Concretos com seus Destinatários e os associa a Remetentes.
+        </li>
+        <li>
+          <strong>Undo/Redo:</strong> armazene os comandos executados em uma pilha (histórico). Para desfazer, chame <code>undo()</code> no topo da pilha. Para refazer, mantenha uma pilha de desfeitos. Comandos devem armazenar o estado anterior do destinatário (ou usar Memento para capturá-lo).
+        </li>
+        <li>
+          <strong>Macro Commands:</strong> um comando que contém uma lista de outros comandos. <code>execute()</code> executa todos em sequência. Permite transações compostas e operações em lote.
+        </li>
+        <li><strong>Quando usar:</strong> parametrizar objetos com operações; enfileirar, agendar ou executar operações remotamente; implementar undo/redo; transações com rollback; sistemas de plugin onde operações são injetadas.</li>
+        <li><strong>Prós:</strong> SRP — desacopla remetente de destinatário; OCP — novos comandos sem modificar remetentes; undo/redo, enfileiramento, logging nativos; composição em macro commands.</li>
+        <li><strong>Contras:</strong> camada extra entre UI e lógica; proliferação de classes de comando.</li>
+        <li><strong>Relaciona-se com:</strong> Memento (captura estado para undo), Chain of Responsibility (handlers como comandos), Prototype (clona comandos para histórico), Strategy (ambos parametrizam objetos — Command converte operações em objetos; Strategy troca algoritmos).</li>
+      </ul>
+    </div>
+
+    <div id="com-cor" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Passar um pedido por uma cadeia de handlers. Cada handler decide processar o pedido ou passá-lo adiante. Desacopla remetente de receptores.</li>
+        <li><strong>Problema:</strong> Múltiplas verificações/transformações sequenciais (autenticação → autorização → validação → rate limiting → cache → handler) concentradas em um único ponto criam um monólito frágil — difícil de reordenar, reutilizar ou testar isoladamente.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Interface Handler</strong> — declara método para processar pedido e setter para o próximo handler.<br>
+          &nbsp;&nbsp;• <strong>Handler Base</strong> (opcional) — abstrato; armazena referência ao próximo; implementa método padrão que delega se não processar.<br>
+          &nbsp;&nbsp;• <strong>Handlers Concretos</strong> — implementam lógica específica; podem: processar e parar, processar e continuar, ou apenas passar adiante.<br>
+          &nbsp;&nbsp;• <strong>Cliente</strong> — monta a cadeia e envia o pedido ao primeiro handler (ou a qualquer handler).
+        </li>
+        <li>
+          <strong>Variantes de comportamento:</strong><br>
+          &nbsp;&nbsp;• <em>Exclusivo</em> — apenas um handler processa (clássico GoF); os demais passam adiante.<br>
+          &nbsp;&nbsp;• <em>Inclusivo</em> — todos os handlers processam em sequência (pipeline/middleware). Variante comum em frameworks web (Express middleware, ASP.NET pipeline, AWS Lambda layers).
+        </li>
+        <li>
+          <strong>CoR em frameworks:</strong> é o padrão por trás de middlewares (Express/Koa), interceptors (Spring), filtros de servlet, pipeline de validação, e tratadores de eventos DOM (bubbling/capturing).
+        </li>
+        <li><strong>Quando usar:</strong> múltiplos objetos podem tratar um pedido e o tratador é determinado em runtime; a cadeia de handlers deve ser configurável dinamicamente; evitar acoplamento direto entre remetente e receptor.</li>
+        <li><strong>Prós:</strong> controle da ordem de tratamento; desacouplamento; OCP — novos handlers sem modificar a cadeia existente; handlers podem ser compartilhados entre cadeias.</li>
+        <li><strong>Contras:</strong> alguns pedidos podem percorrer toda a cadeia sem ser tratados (sem handler padrão); dificulta depuração em cadeias longas.</li>
+        <li><strong>Vs. Decorator:</strong> estrutura similar, mas Decorator sempre delega e não pode parar o fluxo; CoR pode interromper a cadeia ao processar o pedido.</li>
+      </ul>
+    </div>
+
+    <div id="com-template" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Definir o esqueleto de um algoritmo na superclasse, deixando que subclasses preencham etapas específicas sem modificar a estrutura geral.</li>
+        <li><strong>Problema:</strong> Múltiplas classes realizam operações muito similares (parsing de dados em formatos diferentes, exportação para múltiplos destinos) mas duplicam a estrutura do algoritmo. Qualquer mudança na estrutura geral exige atualizar todas as classes.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Classe Abstrata</strong> — declara o <em>método template</em> (geralmente <code>final</code>) que define a sequência fixa; declara métodos abstratos (etapas obrigatórias) e métodos concretos opcionais (com impl. padrão).<br>
+          &nbsp;&nbsp;• <strong>Ganchos (Hooks)</strong> — métodos com corpo vazio que subclasses podem (mas não precisam) sobrescrever para injetar comportamento em pontos específicos do algoritmo.<br>
+          &nbsp;&nbsp;• <strong>Classes Concretas</strong> — implementam as etapas abstratas; podem sobrescrever opcionais e ganchos.
+        </li>
+        <li>
+          <strong>Hollywood Principle:</strong> "Não nos chame, nós chamamos você." A superclasse controla o fluxo e chama as etapas das subclasses — inversão de controle na herança. A subclasse não decide quando suas etapas são chamadas.
+        </li>
+        <li>
+          <strong>Template Method vs. Strategy:</strong> Template Method usa herança — o esqueleto está na superclasse, a relação é estática, estabelecida em compile time. Strategy usa composição — o algoritmo inteiro está na estratégia, trocável em runtime. Use TM quando a estrutura do algoritmo é fixa e apenas detalhes variam; use Strategy quando o algoritmo inteiro deve ser intercambiável.
+        </li>
+        <li><strong>Quando usar:</strong> permitir que clientes estendam apenas partes específicas de um algoritmo; eliminar código duplicado em múltiplas classes com estruturas algorítmicas similares; algoritmo com estrutura fixa mas etapas variáveis.</li>
+        <li><strong>Prós:</strong> elimina duplicação da estrutura; OCP para novas etapas; controle centralizado do fluxo.</li>
+        <li><strong>Contras:</strong> restrição ao cliente — estrutura do algoritmo é imutável; pode violar LSP se subclasses sobrescrevem mais do que deveriam; hierarquia de herança pode ser difícil de manter com muitas variações.</li>
+        <li><strong>Relaciona-se com:</strong> Strategy (alternativa baseada em composição), Factory Method (etapa de TM que cria objetos).</li>
+      </ul>
+    </div>
+
+    <div id="com-state" class="tab-pane block-points">
+      <ul>
+        <li><strong>Intenção:</strong> Permitir que um objeto altere seu comportamento quando seu estado interno muda — como se mudasse de classe em runtime.</li>
+        <li><strong>Problema:</strong> Máquinas de estado implementadas com <code>switch/if</code> no contexto crescem exponencialmente com novos estados. Lógica de transição espalhada por múltiplos métodos; adicionar um novo estado exige modificar todos os métodos condicionais.</li>
+        <li>
+          <strong>Solução / Estrutura:</strong><br>
+          &nbsp;&nbsp;• <strong>Contexto</strong> — armazena referência ao objeto de estado atual; delega chamadas de comportamento ao estado; expõe método para troca de estado (usado pelos próprios estados).<br>
+          &nbsp;&nbsp;• <strong>Interface de Estado</strong> — declara os métodos de comportamento.<br>
+          &nbsp;&nbsp;• <strong>Estados Concretos</strong> — implementam comportamentos específicos; podem iniciar transições de estado substituindo o estado do Contexto.
+        </li>
+        <li>
+          <strong>Quem controla as transições?</strong><br>
+          &nbsp;&nbsp;• <em>Contexto</em> — centralizado; mais fácil de ver o quadro geral das transições, mas acopla o Contexto a todos os estados.<br>
+          &nbsp;&nbsp;• <em>Estados</em> — descentralizado; cada estado conhece os estados para os quais pode transicionar, mas cria acoplamento entre estados.
+        </li>
+        <li>
+          <strong>State vs. Strategy:</strong> estrutura idêntica, intenção diferente. State — os estados podem conhecer-se e iniciar transições; a troca é automática e baseada em lógica interna. Strategy — estratégias são independentes; a troca é manual, controlada pelo cliente.
+        </li>
+        <li><strong>Quando usar:</strong> comportamento varia significativamente com o estado; há muitos condicionais baseados em estado; código duplicado entre estados similares; novos estados serão adicionados frequentemente.</li>
+        <li><strong>Prós:</strong> SRP — cada estado em sua classe; OCP — novos estados sem modificar contexto ou estados existentes; elimina condicionais complexos de máquina de estado.</li>
+        <li><strong>Contras:</strong> overhead para máquinas simples com poucos estados; proliferação de classes; pode ser confuso se transições forem muitas e complexas.</li>
+        <li><strong>Relaciona-se com:</strong> Strategy (mesma estrutura, semântica diferente), Singleton (estados concretos frequentemente sem estado interno — podem ser singletons compartilhados).</li>
+      </ul>
+    </div>
+
+    <div id="com-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Observer vs. Mediator: ambos desacoplam objetos. Observer é descentralizado (publicadores não conhecem assinantes); Mediator centraliza (todos falam com o mediador). Construa um cenário — como um formulário de UI com campos interdependentes — e argumente qual padrão é mais adequado e por quê. O que acontece quando a lógica de coordenação cresce?</li>
+        <li>Como você implementa undo/redo robusto com Command + Memento? Descreva a estrutura de dados necessária, como lidar com comandos que modificam estado externo (banco de dados, arquivos) e por que undo de operações assíncronas é fundamentalmente diferente do síncrono.</li>
+        <li>Chain of Responsibility vs. Decorator: descreva com precisão onde cada um quebra a analogia com o outro — especialmente em relação a: (a) capacidade de interromper o fluxo, (b) quem monta a cadeia, (c) semântica das chamadas.</li>
+        <li>Strategy vs. Template Method: dado um sistema de geração de relatórios com 3 formatos (PDF, CSV, HTML) onde o pipeline é idêntico mas a serialização varia, qual padrão você escolheria? Agora suponha que em 6 meses o pipeline também pode variar entre relatórios — como isso muda sua escolha?</li>
+        <li>Como Observer se relaciona com Event Sourcing e CQRS? Quando o Observer não é suficiente e você precisa da semântica de Event Sourcing (eventos persistidos, replayáveis e imutáveis)? Quais garantias o Observer não fornece que Event Sourcing fornece?</li>
+        <li>Cite um cenário real onde aplicar um Design Pattern introduz mais complexidade do que resolve. Como você justifica <em>não</em> usar o padrão nesse caso, e quais critérios você usa para distinguir "complexidade necessária" de "over-engineering"?</li>
       </ol>
     </div>
   </div>
@@ -776,64 +1241,534 @@
 
   <!-- JWT -->
   <div class="card">
-    <h3>JWT <span class="badge">JSON Web Token</span></h3>
+    <h3>JWT — JSON Web Token <span class="badge">RFC 7519 · RFC 7515 (JWS) · RFC 7518 (JWA)</span></h3>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(this,'jwt-resumo')">Resumo</button>
+      <button class="tab-btn active" onclick="switchTab(this,'jwt-estrutura')">Estrutura</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwt-claims')">Claims</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwt-algoritmos')">Algoritmos &amp; JWKS</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwt-validacao')">Validação</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwt-vulns')">Vulnerabilidades</button>
       <button class="tab-btn" onclick="switchTab(this,'jwt-analogia')">Analogia</button>
       <button class="tab-btn" onclick="switchTab(this,'jwt-perguntas')">Perguntas Expert</button>
     </div>
-    <div id="jwt-resumo" class="tab-pane active block-points">
+
+    <!-- ESTRUTURA -->
+    <div id="jwt-estrutura" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        JWT é um contêiner compacto e URL-safe para transmitir claims entre partes.
+        Por si só define apenas a estrutura — a segurança vem de JWS (assinatura) ou JWE (criptografia).
+        Um JWT assinado é tecnicamente um <strong>JWS Compact Serialization</strong>.
+      </p>
       <ul>
-        <li><strong>Estrutura:</strong> <code>Header.Payload.Signature</code> — Base64URL encoded, ponto-separados.</li>
-        <li><strong>Header:</strong> algoritmo (alg) e tipo (typ: JWT).</li>
-        <li><strong>Payload:</strong> claims — <code>sub</code>, <code>exp</code>, <code>iat</code>, <code>iss</code>, <code>aud</code> e claims customizadas.</li>
-        <li><strong>Signature:</strong> HMAC-SHA256 (chave simétrica) ou RSA/ECDSA (assimétrica).</li>
-        <li><strong>Stateless:</strong> o servidor não precisa de banco para validar — verifica apenas a assinatura.</li>
-        <li><strong>Limitação:</strong> não há revogação nativa — tokens válidos vivem até expirar (use refresh + denylist ou rotação curta).</li>
-        <li><strong>Vulnerabilidade clássica:</strong> <code>alg: none</code> — sempre valide o algoritmo explicitamente.</li>
+        <li>
+          <strong>Formato Compact:</strong>
+          <code>BASE64URL(Header) . BASE64URL(Payload) . BASE64URL(Signature)</code><br>
+          Cada parte é codificada em Base64URL (sem padding <code>=</code>, sem <code>+/</code>)
+          — seguro para URLs e cookies.
+        </li>
+        <li>
+          <strong>Header (JOSE Header):</strong> objeto JSON com metadados de processamento.
+          Claims mais relevantes:<br>
+          &nbsp;&nbsp;<code>alg</code> — algoritmo de assinatura (ex.: <code>RS256</code>, <code>ES256</code>)<br>
+          &nbsp;&nbsp;<code>typ</code> — tipo do token; para Access Tokens use <code>at+JWT</code>
+          (RFC 9068), não <code>JWT</code> genérico<br>
+          &nbsp;&nbsp;<code>kid</code> — Key ID que identifica qual chave no JWKS deve ser usada para
+          validação, essencial para key rotation<br>
+          &nbsp;&nbsp;<code>cty</code> — Content Type; em Nested JWTs vale <code>JWT</code>
+        </li>
+        <li>
+          <strong>Payload:</strong> conjunto de claims (RFC 7519 §4). <strong>Não criptografado</strong>
+          — qualquer um com o token pode decodificar o Base64URL e ler o conteúdo.
+          Nunca coloque segredos, senhas ou dados altamente sensíveis no payload de um JWS.
+        </li>
+        <li>
+          <strong>Signature (JWS):</strong>
+          <code>sign(alg, BASE64URL(header) + "." + BASE64URL(payload), key)</code><br>
+          Garante <em>integridade</em> (payload não foi modificado) e
+          <em>autenticidade</em> (foi emitido por quem detém a chave privada).
+          Não garante confidencialidade.
+        </li>
+        <li>
+          <strong>Serialização JSON completa</strong> (alternativa à Compact): permite múltiplas
+          assinaturas por documento — usado em contextos não-HTTP como JOSE em documentos
+          assinados, mas raro em autenticação web.
+        </li>
       </ul>
     </div>
+
+    <!-- CLAIMS -->
+    <div id="jwt-claims" class="tab-pane block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        Claims são pares chave-valor no payload. Dividem-se em: <em>Registered</em> (RFC 7519),
+        <em>Public</em> (IANA JWT Registry) e <em>Private</em> (acordadas entre partes).
+      </p>
+      <ul>
+        <li><code>iss</code> (Issuer) — URI do emissor. O validador deve conferir que corresponde ao AS esperado. Previne tokens cross-issuer.</li>
+        <li><code>sub</code> (Subject) — identificador único do principal (usuário ou serviço). Localmente único ou globalmente único por <code>iss</code>.</li>
+        <li><code>aud</code> (Audience) — string ou array de strings identificando os destinatários. O RS <strong>deve</strong> rejeitar tokens onde seu identificador não esteja em <code>aud</code> — previne token confusion entre serviços.</li>
+        <li><code>exp</code> (Expiration Time) — Unix timestamp (segundos). O validador deve rejeitar tokens expirados. Pequena tolerância de clock skew (~30–60 s) é aceitável.</li>
+        <li><code>nbf</code> (Not Before) — Unix timestamp a partir do qual o token é válido. Útil para tokens pré-emitidos.</li>
+        <li><code>iat</code> (Issued At) — timestamp de emissão. Permite calcular a idade do token.</li>
+        <li>
+          <code>jti</code> (JWT ID) — identificador único do token (UUID ou valor opaco).
+          Essencial para: (1) implementar denylist de revogação por token individual,
+          (2) prevenir replay attacks em fluxos críticos.
+          Armazene <code>jti</code> revogados no Redis com TTL = <code>exp - now</code>.
+        </li>
+        <li><code>scope</code> — espaço-separado, define permissões concedidas (padrão OAuth 2.0 / RFC 9068).</li>
+        <li><code>client_id</code> — identifica o OAuth client que solicitou o token (RFC 9068 — obrigatório em <code>at+JWT</code>).</li>
+        <li>
+          <strong>Claims OIDC no ID Token:</strong>
+          <code>nonce</code> (replay protection — vinculado ao request original),
+          <code>auth_time</code> (momento da autenticação do usuário),
+          <code>acr</code> (Authentication Context Class Reference — nível de garantia, ex.: MFA),
+          <code>amr</code> (Authentication Methods References — como autenticou: pwd, otp, hwk).
+        </li>
+        <li>
+          <strong>Claims privadas</strong> — evite nomes curtos sem namespace para não colidir
+          com claims futuras. Use URIs (<code>"https://myapi.com/roles"</code>) ou prefixo
+          de domínio reverso.
+        </li>
+      </ul>
+    </div>
+
+    <!-- ALGORITMOS & JWKS -->
+    <div id="jwt-algoritmos" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>HS256 / HS384 / HS512</strong> (HMAC-SHA-2) — simétrico: mesma chave para
+          assinar e verificar. <em>Problema crítico em ambientes distribuídos:</em> todo serviço
+          que valida o token precisa conhecer o segredo compartilhado — vazamento em qualquer
+          nó compromete toda a infraestrutura. Use apenas quando emissor = validador.
+        </li>
+        <li>
+          <strong>RS256 / RS384 / RS512</strong> (RSASSA-PKCS1-v1_5 + SHA-2) — assimétrico RSA.
+          O AS assina com a chave privada; qualquer RS valida com a chave pública (JWKS).
+          PKCS1-v1_5 tem propriedades de maleabilidade; prefira PSS para novos sistemas.
+          Chaves RSA ≥ 2048 bits (recomendado 4096 para longa duração).
+        </li>
+        <li>
+          <strong>PS256 / PS384 / PS512</strong> (RSASSA-PSS) — RSA com padding probabilístico.
+          Mais seguro que PKCS1-v1_5; sem as vulnerabilidades de maleabilidade. Preferido
+          em sistemas de alta segurança.
+        </li>
+        <li>
+          <strong>ES256 / ES384 / ES512</strong> (ECDSA, curvas P-256/P-384/P-521) —
+          assinaturas menores e verificação mais rápida que RSA. ES256 gera assinaturas de
+          64 bytes vs. ~256 bytes do RS256. <em>Atenção:</em> ECDSA requer geração de
+          nonce (k) verdadeiramente aleatório a cada assinatura — k reutilizado vaza a chave
+          privada (falha clássica em implementações fracas).
+        </li>
+        <li>
+          <strong>EdDSA / Ed25519</strong> (RFC 8037) — mais moderno, resistente a falhas de
+          RNG, assinaturas determinísticas, alta performance. Ainda com adoção crescente em
+          libs — verifique suporte antes de adotar.
+        </li>
+        <li>
+          <strong><code>alg: "none"</code></strong> — remove a assinatura completamente.
+          <em>Jamais aceite em produção.</em> Sempre fixe os algoritmos aceitos na validação
+          (allowlist, nunca extraia do header sem restrição).
+        </li>
+        <li>
+          <strong>JWKS (JSON Web Key Set — RFC 7517)</strong> — endpoint público
+          (<code>/.well-known/jwks.json</code>) onde o AS publica suas chaves públicas.
+          Cada JWK contém: <code>kty</code> (tipo de chave), <code>use</code>
+          (<code>sig</code> ou <code>enc</code>), <code>kid</code>, e os parâmetros da
+          chave (<code>n</code>/<code>e</code> para RSA; <code>crv</code>/<code>x</code>/<code>y</code>
+          para EC).<br>
+          <strong>Key Rotation:</strong> o AS publica o novo par de chaves com um novo
+          <code>kid</code>. O RS, ao encontrar um <code>kid</code> desconhecido, re-busca o JWKS
+          (com cache + TTL). Tokens emitidos antes da rotação continuam válidos enquanto a chave
+          antiga permanece no JWKS — remova apenas após o último token com aquela <code>kid</code>
+          expirar.
+        </li>
+      </ul>
+    </div>
+
+    <!-- VALIDAÇÃO -->
+    <div id="jwt-validacao" class="tab-pane block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        A ordem correta de validação importa. Um erro em qualquer etapa deve resultar em
+        rejeição imediata — nunca processe claims de um token não validado.
+      </p>
+      <ul>
+        <li><strong>1. Estrutura:</strong> confirme que o token tem exatamente 3 segmentos Base64URL separados por pontos.</li>
+        <li><strong>2. Header decodificado:</strong> leia <code>alg</code> e <code>kid</code>. Verifique que <code>alg</code> está na allowlist configurada (nunca confie no valor do header sem restrição).</li>
+        <li><strong>3. Chave correta:</strong> resolva a chave via <code>kid</code> no JWKS local (com cache). Se <code>kid</code> ausente e há uma única chave, use-a — mas prefira sempre <code>kid</code> explícito.</li>
+        <li><strong>4. Assinatura:</strong> verifique a assinatura criptográfica sobre <code>header.payload</code>. Qualquer falha → rejeite.</li>
+        <li><strong>5. <code>exp</code>:</strong> <code>now &lt; exp</code> (com tolerância mínima de clock skew, ex.: 30 s).</li>
+        <li><strong>6. <code>nbf</code>:</strong> se presente, <code>now ≥ nbf</code>.</li>
+        <li><strong>7. <code>iss</code>:</strong> compare com o issuer esperado (string exact match ou allowlist).</li>
+        <li><strong>8. <code>aud</code>:</strong> confirme que o identificador do RS está presente no claim <code>aud</code>. Etapa frequentemente omitida — leva a token confusion attacks.</li>
+        <li><strong>9. <code>jti</code> (se revogação imediata for requisito):</strong> consulte a denylist. Hit → rejeite.</li>
+        <li><strong>10. Claims de negócio:</strong> valide <code>scope</code>, <code>roles</code>, <code>tenant</code> e outros claims relevantes para a operação.</li>
+        <li>
+          <strong>Revogação de JWTs stateless:</strong><br>
+          &nbsp;&nbsp;• <em>TTL curto + Refresh Token</em>: AT expira em minutos; RT permite re-emissão — melhor para a maioria dos casos.<br>
+          &nbsp;&nbsp;• <em>Denylist por <code>jti</code></em>: armazena JTIs inválidos no Redis com TTL = <code>exp - now</code>. Overhead de consulta a cada request.<br>
+          &nbsp;&nbsp;• <em>Key rotation imediata</em>: remove a chave de assinatura do JWKS — invalida todos os tokens emitidos com ela. Opção nuclear: use apenas em emergências (comprometimento de chave).
+        </li>
+      </ul>
+    </div>
+
+    <!-- VULNERABILIDADES -->
+    <div id="jwt-vulns" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>Algorithm Confusion (alg switching)</strong> — ataque clássico: o atacante
+          modifica o header de <code>"alg":"RS256"</code> para <code>"alg":"HS256"</code> e
+          assina o token com a <em>chave pública RSA</em> do AS (que é pública e conhecida) como
+          segredo HMAC. Bibliotecas vulneráveis aceitam o token porque a verificação HMAC com a
+          chave pública passa. <strong>Defesa:</strong> sempre fixe o algoritmo esperado no código
+          do validador — nunca leia <code>alg</code> do header para decidir como verificar.
+        </li>
+        <li>
+          <strong><code>alg: "none"</code></strong> — token sem assinatura. O atacante remove a
+          assinatura e seta <code>alg</code> como <code>none</code>. Bibliotecas que aceitam
+          tokens "não assinados" para flexibilidade são vulneráveis.
+          <strong>Defesa:</strong> rejeite <code>alg: none</code> categoricamente.
+        </li>
+        <li>
+          <strong>JWK Header Injection</strong> — o atacante inclui um parâmetro <code>jwk</code>
+          no próprio header do JWT com sua chave pública. Bibliotecas que usam o JWK embutido
+          para validação aceitam qualquer token auto-assinado.
+          <strong>Defesa:</strong> ignore completamente o parâmetro <code>jwk</code> no header;
+          use apenas chaves do JWKS pré-configurado.
+        </li>
+        <li>
+          <strong><code>kid</code> Injection</strong> — se o <code>kid</code> do header é usado
+          em SQL query ou path de arquivo sem sanitização para buscar a chave, o atacante pode
+          injetar <code>../../../dev/null</code> (path traversal) ou SQL para que a chave
+          retornada seja vazia ou previsível.
+          <strong>Defesa:</strong> trate <code>kid</code> como dado não-confiável; use allowlist
+          de KIDs válidos ou busque apenas no JWKS pré-carregado.
+        </li>
+        <li>
+          <strong>Missing <code>aud</code> Validation</strong> — um AT emitido para o serviço A
+          é aceito pelo serviço B porque B não verifica <code>aud</code>.
+          <strong>Defesa:</strong> sempre valide que o <code>aud</code> contém o identificador
+          do serviço receptor — obrigatório, não opcional.
+        </li>
+        <li>
+          <strong>Weak HS256 Secret</strong> — segredos HMAC curtos ou previsíveis são
+          vulneráveis a offline brute-force (ferramentas como hashcat conseguem testar
+          bilhões de combinações/segundo).
+          <strong>Defesa:</strong> use segredos HMAC com entropia mínima de 256 bits; prefira
+          algoritmos assimétricos em sistemas distribuídos.
+        </li>
+        <li>
+          <strong>ECDSA Nonce Reutilizado (k)</strong> — ECDSA (ES256/ES384/ES512) requer um
+          nonce aleatório único por assinatura. Reutilizar <code>k</code> — mesmo em duas
+          assinaturas — vaza matematicamente a chave privada.
+          <strong>Defesa:</strong> use bibliotecas auditadas; prefira Ed25519 (nonce determinístico).
+        </li>
+        <li>
+          <strong>Confusão ID Token / Access Token</strong> — usar o ID Token como credencial
+          de acesso a APIs ou o Access Token para autenticar o usuário. O ID Token pode ter
+          claims falsas de escopo; o AT não garante identidade do usuário.
+          <strong>Defesa:</strong> use <code>typ: "at+JWT"</code> em ATs (RFC 9068);
+          valide <code>typ</code> no receptor; APIs devem aceitar apenas ATs, não ID Tokens.
+        </li>
+      </ul>
+    </div>
+
+    <!-- ANALOGIA JWT -->
     <div id="jwt-analogia" class="tab-pane analogy-box">
       <span class="emoji">🪪</span>
-      Um RG assinado pelo governo: qualquer porteiro pode verificar que o documento é autêntico pela assinatura, sem precisar ligar para o cartório. Se o RG expirou, não vale mais — mas revogar antes de vencer exige uma lista negra.
+      <p>Pense num passaporte moderno com chip criptográfico. O governo (Authorization Server) emite o documento, assina com sua chave privada e inclui informações: quem você é (<code>sub</code>), quando expira (<code>exp</code>), para quais países é válido (<code>aud</code>). Qualquer agente de fronteira do mundo (Resource Server) pode verificar a autenticidade do chip usando a chave pública do governo — sem ligar para a embaixada a cada entrada.</p>
+      <p style="margin-top:.75rem;">O conteúdo do passaporte é legível (não criptografado). A assinatura digital garante que ninguém alterou os dados. Se o passaporte for roubado, ele continua válido até expirar — a menos que o governo publique uma lista de passaportes revogados (<code>jti</code> denylist).</p>
+      <p style="margin-top:.75rem;">O <code>kid</code> é o número de série da máquina de assinatura usada. Quando o governo troca de máquina (key rotation), ele avisa qual número usar para verificar cada documento — documentos antigos continuam verificáveis com a máquina antiga até expirarem.</p>
     </div>
+
+    <!-- PERGUNTAS EXPERT JWT -->
     <div id="jwt-perguntas" class="tab-pane questions">
       <ol>
-        <li>Explique o ataque de "algorithm confusion" (RS256 → HS256) em implementações JWT vulneráveis e como a biblioteca deve se defender.</li>
-        <li>Como você implementa revogação de JWT sem estado server-side? Quais são os trade-offs entre denylist, rotação de chaves e tokens de curta duração?</li>
-        <li>JWT no localStorage vs. HttpOnly cookie — analise os vetores de ataque XSS e CSRF para cada abordagem.</li>
-        <li>O que são "nested JWTs" e quando você os usaria vs. uma abordagem mais simples?</li>
-        <li>Como você projeta um sistema de refresh tokens seguro com rotação automática e detecção de reutilização (refresh token rotation + reuse detection)?</li>
+        <li>Descreva o ataque de <em>algorithm confusion</em> (RS256 → HS256) passo a passo. Por que bibliotecas antigas são vulneráveis e o que a implementação correta deve fazer para tornar o ataque impossível?</li>
+        <li>Explique por que validar o claim <code>aud</code> é tão crítico quanto validar a assinatura. Construa um cenário de ataque real onde a omissão da validação de <code>aud</code> em um microserviço permite escalonamento de privilégios.</li>
+        <li>Compare as três estratégias de revogação de JWT (TTL curto + RT, denylist por <code>jti</code>, rotação de chave de emergência) em termos de: latência de requisição, carga no storage, garantias de revogação imediata e complexidade operacional.</li>
+        <li>Por que ECDSA (ES256) exige que o nonce <code>k</code> seja único por assinatura, e o que acontece matematicamente quando ele é reutilizado? Como EdDSA/Ed25519 resolve esse problema?</li>
+        <li>O ataque de <em>JWK Header Injection</em> é considerado uma falha de biblioteca, não de protocolo. Você discorda? Argumente e explique como o protocolo poderia ser mais defensivo.</li>
+        <li>Em um sistema de microserviços com 50 serviços, como você projeta a propagação de identidade entre chamadas internas? Compare: repassar o AT original do usuário, emitir um novo AT interno (Token Exchange — RFC 8693) e usar mTLS com SPIFFE/SPIRE para identidade de serviço.</li>
+        <li>JWT no <code>localStorage</code> vs. <code>HttpOnly cookie</code> vs. memória JS: construa a matriz de ameaças para cada opção considerando XSS, CSRF, tab isolation, service worker e extensões de browser maliciosas.</li>
       </ol>
     </div>
   </div>
 
   <!-- JWE -->
   <div class="card">
-    <h3>JWE <span class="badge">JSON Web Encryption</span></h3>
+    <h3>JWE — JSON Web Encryption <span class="badge">RFC 7516 · RFC 7518 (JWA) · RFC 7517 (JWK)</span></h3>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(this,'jwe-resumo')">Resumo</button>
+      <button class="tab-btn active" onclick="switchTab(this,'jwe-estrutura')">Estrutura</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwe-algoritmos')">Algoritmos</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwe-nested')">Nested JWT</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwe-vs-tls')">JWE vs. TLS</button>
+      <button class="tab-btn" onclick="switchTab(this,'jwe-vulns')">Vulnerabilidades</button>
       <button class="tab-btn" onclick="switchTab(this,'jwe-analogia')">Analogia</button>
       <button class="tab-btn" onclick="switchTab(this,'jwe-perguntas')">Perguntas Expert</button>
     </div>
-    <div id="jwe-resumo" class="tab-pane active block-points">
+
+    <!-- ESTRUTURA JWE -->
+    <div id="jwe-estrutura" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        JWE criptografa o payload — ao contrário do JWS (JWT assinado), o conteúdo
+        fica ilegível para quem não possui a chave. Usa duas camadas de criptografia:
+        uma para a chave (<em>key management</em>) e uma para o conteúdo (<em>content encryption</em>).
+      </p>
       <ul>
-        <li><strong>Diferença do JWT:</strong> JWT <em>assina</em> (garante integridade/autenticidade) mas não criptografa — payload é visível. JWE <em>criptografa</em> o payload.</li>
-        <li><strong>Estrutura:</strong> 5 partes Base64URL: Header · Encrypted Key · IV · Ciphertext · Authentication Tag.</li>
-        <li><strong>Algoritmos:</strong> RSA-OAEP ou ECDH-ES para key wrapping; AES-GCM ou AES-CBC+HMAC para conteúdo.</li>
-        <li><strong>Uso típico:</strong> tokens com dados sensíveis que passam por terceiros, tokens opaque para clientes.</li>
-        <li><strong>Nested JWT:</strong> JWS dentro de JWE — primeiro assina, depois criptografa (sign-then-encrypt).</li>
+        <li>
+          <strong>Compact Serialization (5 partes):</strong><br>
+          <code>BASE64URL(Header) . BASE64URL(Encrypted Key) . BASE64URL(IV) . BASE64URL(Ciphertext) . BASE64URL(Auth Tag)</code>
+        </li>
+        <li>
+          <strong>Parte 1 — JWE Protected Header:</strong> metadados em JSON.
+          Claims principais: <code>alg</code> (algoritmo de key management),
+          <code>enc</code> (algoritmo de content encryption), <code>kid</code>,
+          <code>typ</code>, <code>cty</code> (para Nested JWT: <code>"JWT"</code>),
+          <code>epk</code> (Ephemeral Public Key — usado em ECDH-ES).
+        </li>
+        <li>
+          <strong>Parte 2 — JWE Encrypted Key:</strong> a Content Encryption Key (CEK)
+          cifrada com a chave do destinatário usando o algoritmo <code>alg</code>.
+          Em ECDH-ES puro (<code>"alg":"ECDH-ES"</code>), esta parte é vazia — a CEK é
+          derivada diretamente pelo ECDH, não transmitida.
+        </li>
+        <li>
+          <strong>Parte 3 — Initialization Vector (IV):</strong> nonce aleatório gerado
+          pelo emissor para o algoritmo de content encryption. Deve ser único por
+          operação de ciframento com a mesma CEK.
+        </li>
+        <li>
+          <strong>Parte 4 — Ciphertext:</strong> plaintext cifrado com a CEK usando o
+          algoritmo <code>enc</code>. Se <code>zip: "DEF"</code> estiver no header, o
+          plaintext é comprimido antes de ser cifrado (veja riscos em Vulnerabilidades).
+        </li>
+        <li>
+          <strong>Parte 5 — Authentication Tag:</strong> tag de autenticação AEAD que
+          cobre o Header + IV + Ciphertext. Garante integridade do ciphertext e do header
+          — qualquer modificação no header ou no conteúdo é detectada antes da decriptação.
+        </li>
+        <li>
+          <strong>Processo de encriptação resumido:</strong><br>
+          ① Gere uma CEK aleatória adequada para o algoritmo <code>enc</code>.<br>
+          ② Cifre a CEK com a chave pública do destinatário usando <code>alg</code>.<br>
+          ③ Gere um IV aleatório.<br>
+          ④ Cifre o plaintext com CEK + IV + header como AAD (Additional Authenticated Data).<br>
+          ⑤ Obtenha o Authentication Tag do passo ④.<br>
+          ⑥ Serialize as 5 partes em Base64URL separadas por pontos.
+        </li>
       </ul>
     </div>
+
+    <!-- ALGORITMOS JWE -->
+    <div id="jwe-algoritmos" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;font-weight:700;color:var(--accent);">Key Management (alg) — como a CEK é protegida</p>
+      <ul>
+        <li>
+          <strong>RSA-OAEP</strong> (recomendado) / <strong>RSA-OAEP-256</strong> —
+          assimétrico; cifra a CEK com a chave pública RSA do destinatário usando padding
+          OAEP (Optimal Asymmetric Encryption Padding). Seguro contra ataques de padding
+          oracle modernos. Chave RSA ≥ 2048 bits.
+        </li>
+        <li>
+          <strong>RSA1_5</strong> (RSA-PKCS1-v1_5) — <strong style="color:var(--accent2);">NUNCA use.</strong>
+          Vulnerável ao ataque de Bleichenbacher (1998): um oráculo de padding que, com ~milhões
+          de queries, permite recuperar a CEK sem a chave privada. Ainda listado no RFC por
+          compatibilidade; remova de qualquer allowlist.
+        </li>
+        <li>
+          <strong>ECDH-ES</strong> — Key Agreement efêmero. O emissor gera um par EC efêmero,
+          executa ECDH com a chave pública EC do destinatário, deriva a CEK via
+          HKDF-Concat. A chave pública efêmera (<code>epk</code>) é incluída no header.
+          A CEK nunca é transmitida — parte 2 do JWE fica vazia. <em>Forward secrecy por design</em>:
+          comprometer a chave privada do destinatário não decripta JWEs passados (o par
+          efêmero é descartado após uso).
+        </li>
+        <li>
+          <strong>ECDH-ES+A128KW / ECDH-ES+A256KW</strong> — igual ao ECDH-ES mas usa o
+          resultado do ECDH como key wrapping key (AES Key Wrap). A CEK é separada e
+          encapsulada — permite multi-destinatários na serialização JSON.
+        </li>
+        <li>
+          <strong>A128KW / A256KW</strong> — AES Key Wrap simétrico. Simples e eficiente
+          para cenários onde emissor e destinatário compartilham um segredo.
+        </li>
+        <li>
+          <strong>dir</strong> — a chave compartilhada <em>é</em> diretamente a CEK.
+          Mais eficiente (sem key wrapping), mas sem separação de camadas — comprometer
+          a chave expõe todos os JWEs cifrados com ela.
+        </li>
+        <li>
+          <strong>PBES2-HS256+A128KW / PBES2-HS512+A256KW</strong> — derivação de CEK a
+          partir de senha (PBKDF2). Adequado para JWEs derivados de senhas humanas
+          (ex.: exportação de dados cifrada por senha).
+        </li>
+      </ul>
+      <p style="margin:.75rem 0;font-weight:700;color:var(--accent);">Content Encryption (enc) — como o payload é cifrado</p>
+      <ul>
+        <li>
+          <strong>A128GCM / A192GCM / A256GCM</strong> (recomendados) — AES no modo GCM
+          (Galois/Counter Mode). Fornece AEAD nativo: ciframento + autenticação em uma
+          operação. Altamente eficiente em hardware com instrução AES-NI. A256GCM é o
+          padrão para sistemas modernos.
+        </li>
+        <li>
+          <strong>A128CBC-HS256 / A192CBC-HS384 / A256CBC-HS512</strong> — AES-CBC +
+          HMAC-SHA-2. A autenticação é computada separadamente via HMAC.
+          <em>Atenção:</em> a ordem correta é <strong>verify-then-decrypt</strong> (MAC
+          First); implementar decrypt-then-verify é vulnerável a padding oracle attacks
+          em AES-CBC. Prefira AES-GCM em implementações novas.
+        </li>
+      </ul>
+    </div>
+
+    <!-- NESTED JWT -->
+    <div id="jwe-nested" class="tab-pane block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        Um Nested JWT combina assinatura (JWS) e criptografia (JWE) num único token.
+        A ordem <strong>sign-then-encrypt</strong> é mandatória — invertê-la cria
+        vulnerabilidades sutis mas sérias.
+      </p>
+      <ul>
+        <li>
+          <strong>Estrutura:</strong> o payload do JWE é um JWS completo (JWT assinado).
+          O header do JWE deve ter <code>"cty": "JWT"</code> para indicar que o plaintext
+          é um JWT. Após decriptação, o receptor processa o JWS interno normalmente.
+        </li>
+        <li>
+          <strong>Por que sign-then-encrypt?</strong><br>
+          Se você <em>encrypt-then-sign</em>: o assinante prova que assinou o ciphertext,
+          mas não que conhecia o plaintext. Um atacante pode remover a assinatura original
+          e re-assinar com sua própria chave — o receptor decripta e vê conteúdo legítimo
+          mas acredita que o atacante foi o autor. Com <em>sign-then-encrypt</em>, a
+          assinatura está dentro do envelope cifrado — somente quem decriptou pode
+          verificar quem assinou.
+        </li>
+        <li>
+          <strong>Casos de uso:</strong><br>
+          &nbsp;&nbsp;• Tokens com PII (dados pessoais sensíveis) que transitam por sistemas
+          de logging ou intermediários que não devem ver o conteúdo.<br>
+          &nbsp;&nbsp;• Claims de autorização sensíveis (salário, diagnóstico médico) em
+          contextos regulatórios (HIPAA, LGPD).<br>
+          &nbsp;&nbsp;• Tokens armazenados em cookies do lado do cliente onde o usuário não
+          deve ter visibilidade das claims internas (ex.: feature flags, preços internos).
+        </li>
+        <li>
+          <strong>Custo:</strong> dois passes criptográficos (assinar + criptografar).
+          Na maioria dos casos, confidencialidade por TLS é suficiente — use Nested JWT
+          apenas quando há necessidade documentada de confidencialidade além da camada
+          de transporte.
+        </li>
+      </ul>
+    </div>
+
+    <!-- JWE VS TLS -->
+    <div id="jwe-vs-tls" class="tab-pane block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        TLS protege o canal de transporte. JWE protege o objeto — o payload permanece
+        cifrado independentemente de como ou por onde trafega.
+      </p>
+      <ul>
+        <li>
+          <strong>TLS termina nos terminadores de TLS</strong> (load balancers, proxies reversos,
+          API gateways). O payload viaja em plaintext dentro da infraestrutura interna.
+          Sistemas de logging, APM, SIEM e outros intermediários <em>veem</em> o conteúdo.
+        </li>
+        <li>
+          <strong>JWE protege end-to-end por objeto</strong> — o payload está cifrado desde
+          a criação até a decriptação pelo destinatário final. Load balancers, proxies, logs
+          e eventuais vazamentos de HTTP history não expõem o conteúdo.
+        </li>
+        <li>
+          <strong>Quando JWE supera TLS isolado:</strong><br>
+          &nbsp;&nbsp;• Tokens persistidos em bancos, caches (Redis), filas de mensagens ou
+          object storage — TLS não cobre dados em repouso.<br>
+          &nbsp;&nbsp;• Tokens entregues ao browser/client que não devem ser lidos pelo
+          JavaScript (ex.: cookies HttpOnly não bastam se o servidor pode ser comprometido
+          — JWE garante que nem o servidor intermediário lê).<br>
+          &nbsp;&nbsp;• Comunicações multi-hop onde o token passa por terceiros (federação
+          entre organizações, parceiros externos).<br>
+          &nbsp;&nbsp;• Requisitos regulatórios que exigem proteção de PII no nível de
+          objeto, não apenas em trânsito.
+        </li>
+        <li>
+          <strong>Quando TLS é suficiente:</strong> a grande maioria dos sistemas internos.
+          JWE adiciona complexidade operacional (gestão de chaves de criptografia, rotação
+          de chaves EC/RSA de enc, separação de chaves de sig vs. enc). Não aplique sem
+          necessidade real.
+        </li>
+        <li>
+          <strong>Separação de chaves:</strong> nunca use a mesma chave para assinatura
+          (JWS) e criptografia (JWE). O claim <code>"use": "sig"</code> vs.
+          <code>"use": "enc"</code> no JWK marca a finalidade — bibliotecas corretas
+          devem rejeitar uso cruzado.
+        </li>
+      </ul>
+    </div>
+
+    <!-- VULNERABILIDADES JWE -->
+    <div id="jwe-vulns" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>Bleichenbacher / Padding Oracle (RSA-PKCS1-v1_5)</strong> — o ataque mais
+          devastador em JWE. Um oráculo de padding (serviço que responde diferente para
+          ciphertexts inválidos vs. válidos) permite recuperar a CEK com ~milhões de
+          requisições. Completamente evitado usando RSA-OAEP ou ECDH-ES.
+        </li>
+        <li>
+          <strong>Invalid Curve Attack (ECDH)</strong> — se o servidor aceita pontos EC
+          sem validar que pertencem à curva correta, o atacante pode enviar pontos de
+          curvas de pequena ordem e, por múltiplas tentativas, recuperar bits da chave
+          privada. <strong>Defesa:</strong> use bibliotecas que validam pontos EC;
+          nunca implemente ECDH manualmente.
+        </li>
+        <li>
+          <strong>CRIME/BREACH em <code>zip: "DEF"</code></strong> — compressão antes
+          de criptografia é vulnerável quando parte do plaintext é controlada pelo
+          atacante: a variação no tamanho do ciphertext vaza informação sobre o conteúdo
+          comprimido (análogo ao ataque BREACH em TLS com compressão HTTP).
+          <strong>Defesa:</strong> evite <code>zip</code> quando o plaintext contém dados
+          do atacante e dados secretos juntos.
+        </li>
+        <li>
+          <strong>IV/Nonce Reutilizado em AES-GCM</strong> — reutilizar o mesmo IV com
+          a mesma CEK em AES-GCM é catastrófico: vaza a chave de autenticação e permite
+          recuperar o plaintext. <strong>Defesa:</strong> gere IV aleatório de 96 bits
+          por operação; rotacione a CEK antes de atingir o limite de operações (~2^32 para
+          IVs aleatórios com AES-GCM 96-bit).
+        </li>
+        <li>
+          <strong>Decrypt-then-Verify em AES-CBC</strong> — em implementações com
+          AES-CBC+HMAC, verificar o MAC <em>após</em> decriptação expõe um oracle de
+          padding CBC ao atacante. <strong>Defesa:</strong> sempre verifique o HMAC
+          <em>antes</em> de decriptar (constant-time comparison); prefira AES-GCM que
+          torna isso impossível por design.
+        </li>
+        <li>
+          <strong>Uso de Chave <code>sig</code> para <code>enc</code></strong> — usar a
+          mesma chave RSA/EC para assinar JWTs e criptografar JWEs cria riscos de
+          cross-context attacks. <strong>Defesa:</strong> separe sempre as chaves por
+          finalidade; publique no JWKS com <code>"use"</code> correto.
+        </li>
+      </ul>
+    </div>
+
+    <!-- ANALOGIA JWE -->
     <div id="jwe-analogia" class="tab-pane analogy-box">
       <span class="emoji">🔐</span>
-      JWT é uma carta com assinatura reconhecida em cartório — qualquer um pode ler o conteúdo, mas sabe que é autêntica. JWE é essa mesma carta dentro de um envelope lacrado com criptografia — só quem tem a chave consegue abrir e ler o conteúdo.
+      <p>Um JWT assinado (JWS) é como uma carta entregue em envelope transparente com lacre oficial. Qualquer entregador vê o conteúdo, mas sabe que é autêntico — o lacre não foi violado.</p>
+      <p style="margin-top:.75rem;">Um JWE é essa mesma carta dentro de um cofre portátil com combinação. O entregador (proxy, load balancer, log system) carrega o cofre sem conseguir ler o conteúdo. Apenas o destinatário que tem a chave (<code>alg</code>) consegue abrir o cofre e ler a carta. O cadeado do cofre é o <em>key management</em> (<code>alg</code>); a proteção do interior é a <em>content encryption</em> (<code>enc</code>).</p>
+      <p style="margin-top:.75rem;">Um Nested JWT (JWS dentro de JWE) é a carta com lacre oficial <em>dentro</em> do cofre. O destinatário abre o cofre (decripta), encontra a carta lacrada, verifica o lacre (valida a assinatura) e só então lê. Isso garante que quem assinou a carta conhecia seu conteúdo — e que ninguém no caminho leu nem adulterou nada.</p>
     </div>
+
+    <!-- PERGUNTAS EXPERT JWE -->
     <div id="jwe-perguntas" class="tab-pane questions">
       <ol>
-        <li>Por que é importante assinar antes de criptografar (sign-then-encrypt) em vez de criptografar antes de assinar?</li>
-        <li>Qual vulnerabilidade existe em algoritmos de JWE com padding (ex.: RSA-PKCS1v1.5) e por que RSA-OAEP é preferido?</li>
-        <li>Em que cenários práticos JWE supera o uso de TLS para confidencialidade do payload?</li>
+        <li>Descreva o ataque de Bleichenbacher contra RSA-PKCS1-v1_5 em JWE. Como RSA-OAEP e ECDH-ES eliminam essa classe de vulnerabilidade por razões diferentes?</li>
+        <li>Por que a ordem <em>sign-then-encrypt</em> é obrigatória em Nested JWTs? Construa um ataque concreto que explora <em>encrypt-then-sign</em> para repúdio de autoria.</li>
+        <li>Compare ECDH-ES puro (<code>"alg":"ECDH-ES"</code>) com ECDH-ES+A256KW em termos de: forward secrecy, suporte a multi-destinatários e tamanho do token. Em que cenário cada um é mais adequado?</li>
+        <li>AES-GCM fornece AEAD nativamente enquanto AES-CBC+HMAC requer composição manual. Qual é o risco específico de implementar incorretamente a ordem MAC/decriptar em AES-CBC? Por que AES-GCM não tem esse problema?</li>
+        <li>Um engenheiro propõe usar <code>zip: "DEF"</code> em JWEs para reduzir o tamanho dos tokens que contêm claims de usuário. Você aprovaria? Quais condições precisam ser verdadeiras para que isso seja seguro?</li>
+        <li>Em que situações regulatórias (LGPD, HIPAA, PCI-DSS) JWE se torna necessário em vez de apenas desejável? Como você arquitetaria a gestão do ciclo de vida das chaves de criptografia (<code>enc</code>) separadas das chaves de assinatura (<code>sig</code>)?</li>
       </ol>
     </div>
   </div>
@@ -870,33 +1805,267 @@
 
   <!-- OAuth 2.0 -->
   <div class="card">
-    <h3>OAuth 2.0 <span class="badge">+ PKCE + OpenID Connect</span></h3>
+    <h3>OAuth 2.0 <span class="badge">RFC 6749 · RFC 7636 · OIDC Core 1.0</span></h3>
     <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab(this,'oa-resumo')">Resumo</button>
+      <button class="tab-btn active" onclick="switchTab(this,'oa-resumo')">Arquitetura</button>
+      <button class="tab-btn" onclick="switchTab(this,'oa-grants')">Grant Types</button>
+      <button class="tab-btn" onclick="switchTab(this,'oa-tokens')">Tokens &amp; Endpoints</button>
+      <button class="tab-btn" onclick="switchTab(this,'oa-seguranca')">Segurança</button>
       <button class="tab-btn" onclick="switchTab(this,'oa-analogia')">Analogia</button>
       <button class="tab-btn" onclick="switchTab(this,'oa-perguntas')">Perguntas Expert</button>
     </div>
+
+    <!-- ARQUITETURA -->
     <div id="oa-resumo" class="tab-pane active block-points">
+      <p style="margin-bottom:1rem;color:var(--muted);font-size:.9rem;">
+        OAuth 2.0 é um <strong>framework de autorização</strong> (RFC 6749), não de autenticação.
+        Delega acesso a recursos sem expor credenciais do Resource Owner ao Client.
+        OpenID Connect (OIDC) adiciona a camada de identidade sobre ele.
+      </p>
       <ul>
-        <li><strong>Authorization Framework</strong> (não autenticação): delega acesso sem compartilhar credenciais.</li>
-        <li><strong>Grants (fluxos):</strong> Authorization Code (web apps), Implicit (depreciado), Client Credentials (M2M), Device Code (TV/CLI).</li>
-        <li><strong>PKCE (Proof Key for Code Exchange):</strong> obrigatório para SPAs e mobile — evita code interception com code_verifier/challenge.</li>
-        <li><strong>Tokens:</strong> Access Token (curto prazo, acesso a recurso), Refresh Token (longo prazo, obtém novo AT), ID Token (OIDC — identidade).</li>
-        <li><strong>OpenID Connect (OIDC):</strong> camada de identidade sobre OAuth 2.0 — adiciona ID Token (JWT) com claims do usuário.</li>
-        <li><strong>Scopes:</strong> granularidade de permissões concedidas ao client.</li>
+        <li>
+          <strong>Resource Owner</strong> — entidade que possui os dados (geralmente o usuário humano).
+          É quem concede ou nega o acesso via consent screen.
+        </li>
+        <li>
+          <strong>Client</strong> — a aplicação que solicita acesso em nome do Resource Owner.
+          Pode ser <em>confidential</em> (armazena segredo com segurança, ex: backend) ou
+          <em>public</em> (não pode guardar segredo, ex: SPA, mobile).
+        </li>
+        <li>
+          <strong>Authorization Server (AS)</strong> — emite tokens após autenticar o Resource Owner
+          e obter consentimento. Expõe os endpoints <code>/authorize</code> e <code>/token</code>.
+          É a fonte de verdade sobre permissões.
+        </li>
+        <li>
+          <strong>Resource Server (RS)</strong> — hospeda a API protegida. Valida o Access Token
+          a cada requisição (via introspecção local — JWT — ou chamada ao AS via RFC 7662).
+        </li>
+        <li>
+          <strong>OpenID Connect (OIDC)</strong> — extensão sobre OAuth 2.0 que padroniza
+          <em>autenticação</em>. Introduz o <code>ID Token</code> (JWT com claims de identidade),
+          o endpoint <code>/userinfo</code> e discovery via
+          <code>/.well-known/openid-configuration</code>.
+        </li>
+        <li>
+          <strong>Scopes</strong> — strings que delimitam o nível de acesso solicitado
+          (<code>read:profile</code>, <code>write:orders</code>). O AS pode conceder
+          um subconjunto; o RS deve verificar o scope antes de servir cada recurso.
+        </li>
       </ul>
     </div>
+
+    <!-- GRANT TYPES -->
+    <div id="oa-grants" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>Authorization Code</strong> (RFC 6749 §4.1) — fluxo padrão para web apps
+          com backend. O AS retorna um <em>authorization code</em> de uso único via redirect;
+          o backend troca o code + <code>client_secret</code> por tokens no canal de back-channel
+          (server-to-server). Tokens nunca ficam expostos no browser.
+        </li>
+        <li>
+          <strong>Authorization Code + PKCE</strong> (RFC 7636) — obrigatório para clientes
+          públicos (SPAs, mobile, desktop). Substitui o <code>client_secret</code> por um
+          par criptográfico efêmero:<br>
+          &nbsp;&nbsp;① <code>code_verifier</code> — string aleatória URL-safe (43–128 chars)
+          gerada pelo client, armazenada localmente.<br>
+          &nbsp;&nbsp;② <code>code_challenge = BASE64URL(SHA-256(code_verifier))</code> enviado
+          no request inicial (<code>code_challenge_method=S256</code>).<br>
+          &nbsp;&nbsp;③ No token request, o client envia o <code>code_verifier</code> original;
+          o AS recomputa o hash e compara — um interceptador do code não consegue completar
+          o tradeoff sem o verifier.
+        </li>
+        <li>
+          <strong>Client Credentials</strong> (RFC 6749 §4.4) — machine-to-machine (M2M).
+          O client autentica-se como si mesmo (sem contexto de usuário) usando
+          <code>client_id</code> + <code>client_secret</code> ou mTLS/private_key_jwt.
+          Ideal para serviços backend, workers e CLIs. Não emite Refresh Token.
+        </li>
+        <li>
+          <strong>Device Authorization</strong> (RFC 8628) — dispositivos com entrada
+          limitada (smart TVs, CLIs, IoT). O device exibe um <code>user_code</code> e
+          uma URL; o usuário autoriza em outro device; o device faz polling no token
+          endpoint até aprovação ou expiração do <code>device_code</code>.
+        </li>
+        <li>
+          <strong>Resource Owner Password Credentials (ROPC)</strong> — depreciado.
+          O client coleta credenciais diretamente e troca por tokens. Incompatível com
+          MFA, SSO e federação. Nunca usar em novos sistemas.
+        </li>
+        <li>
+          <strong>Implicit Flow</strong> — depreciado (OAuth 2.1 remove formalmente).
+          Retornava tokens diretamente no fragment da URL de redirect, expondo-os ao
+          browser history, logs de proxy e referer headers. Substituído por
+          Authorization Code + PKCE.
+        </li>
+      </ul>
+    </div>
+
+    <!-- TOKENS & ENDPOINTS -->
+    <div id="oa-tokens" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>Access Token (AT)</strong> — credencial de acesso ao RS, geralmente
+          um JWT assinado (RS256/ES256). Contém <code>sub</code>, <code>aud</code>,
+          <code>exp</code>, <code>iat</code>, <code>scope</code>. Deve ser de vida
+          curta (padrão: 3600 s). O RS valida a assinatura localmente via JWKS
+          (<code>/.well-known/jwks.json</code>) sem chamada ao AS — stateless e escalável.
+          <strong>Não deve ser usado para autenticar usuários</strong> — ele prova autorização,
+          não identidade.
+        </li>
+        <li>
+          <strong>Refresh Token (RT)</strong> — credencial de longa duração para obter
+          novos ATs sem re-autenticar o usuário. Deve ser armazenado com segurança
+          (HttpOnly cookie ou secure storage nativo). Suporte a <em>Refresh Token Rotation</em>
+          (cada uso emite um novo RT e invalida o anterior) mitiga roubo de RT.
+          Não emitido no fluxo Client Credentials.
+        </li>
+        <li>
+          <strong>ID Token</strong> (OIDC) — JWT assinado pelo AS que representa a
+          identidade do usuário autenticado. Claims obrigatórios: <code>iss</code>,
+          <code>sub</code>, <code>aud</code>, <code>exp</code>, <code>iat</code>.
+          Claims opcionais: <code>name</code>, <code>email</code>, <code>nonce</code>
+          (replay protection). Deve ser validado pelo client, nunca pelo RS.
+        </li>
+        <li>
+          <strong>Endpoint <code>/authorize</code></strong> — inicia o fluxo Authorization
+          Code. Parâmetros principais: <code>response_type=code</code>,
+          <code>client_id</code>, <code>redirect_uri</code>, <code>scope</code>,
+          <code>state</code> (CSRF token), <code>nonce</code> (OIDC),
+          <code>code_challenge</code> + <code>code_challenge_method</code> (PKCE).
+        </li>
+        <li>
+          <strong>Endpoint <code>/token</code></strong> — troca code por tokens.
+          Para Authorization Code: <code>grant_type=authorization_code</code>,
+          <code>code</code>, <code>redirect_uri</code>, <code>client_id</code>,
+          <code>client_secret</code> (confidential) ou <code>code_verifier</code> (PKCE).
+          Resposta: <code>access_token</code>, <code>token_type=Bearer</code>,
+          <code>expires_in</code>, <code>refresh_token</code>, <code>id_token</code>.
+        </li>
+        <li>
+          <strong>Token Introspection</strong> (RFC 7662) — endpoint <code>/introspect</code>
+          permite ao RS verificar validade e metadados de tokens opacos consultando o AS.
+          Adiciona latência; use JWT local para alta frequência e introspecção para revogação
+          imediata crítica.
+        </li>
+        <li>
+          <strong>Token Revocation</strong> (RFC 7009) — endpoint <code>/revoke</code>
+          invalida AT ou RT imediatamente (ex: logout, compromisso de credencial).
+          Com JWTs stateless, revogação exige token blocklist ou redução do TTL do AT.
+        </li>
+      </ul>
+    </div>
+
+    <!-- SEGURANÇA -->
+    <div id="oa-seguranca" class="tab-pane block-points">
+      <ul>
+        <li>
+          <strong>Authorization Code Interception</strong> — atacante intercepta o
+          <code>code</code> via custom URL scheme malicioso (mobile) ou open redirect.
+          PKCE elimina o problema: sem o <code>code_verifier</code> original, o
+          <code>code</code> é inútil.
+        </li>
+        <li>
+          <strong>CSRF no Authorization Endpoint</strong> — sempre inclua o parâmetro
+          <code>state</code> (valor opaco vinculado à sessão do browser) e valide-o
+          no callback. Em OIDC, use também <code>nonce</code> vinculado ao ID Token
+          para prevenir replay attacks.
+        </li>
+        <li>
+          <strong>Open Redirect</strong> — o AS deve validar o <code>redirect_uri</code>
+          contra a lista de URIs pré-registrados exatamente (sem wildcard). Um redirect_uri
+          aberto permite que um atacante redirecione o <code>code</code> para seu servidor.
+        </li>
+        <li>
+          <strong>Clientes Públicos vs. Confidenciais</strong> — SPAs não podem guardar
+          <code>client_secret</code> (o código-fonte é público). Use PKCE sem secret.
+          Para mobile nativo, same principle: use PKCE + custom URI scheme ou claimed
+          HTTPS schemes (universal links / app links).
+        </li>
+        <li>
+          <strong>Token Storage (SPAs)</strong> — Access Token em memória (variável JS)
+          é mais seguro que localStorage (vulnerável a XSS). Refresh Token em
+          HttpOnly cookie com <code>SameSite=Strict</code> e <code>Secure</code>.
+          BFF (Backend for Frontend) pattern delega toda a gestão de tokens ao backend.
+        </li>
+        <li>
+          <strong>mTLS / DPoP como alternativas ao Bearer</strong> — Bearer tokens são
+          "holder-of-token": quem tiver o token pode usá-lo. DPoP (RFC 9449) vincula
+          o AT a uma chave assimétrica controlada pelo client (proof-of-possession),
+          tornando tokens roubados inúteis sem a chave privada correspondente.
+        </li>
+        <li>
+          <strong>Logout Seguro em OIDC</strong> — <em>RP-Initiated Logout</em>: client
+          redireciona para <code>/logout</code> do AS com <code>id_token_hint</code> e
+          <code>post_logout_redirect_uri</code>. <em>Front-Channel Logout</em>: AS carrega
+          iframes das RPs para invalidar sessões. <em>Back-Channel Logout</em> (mais confiável):
+          AS envia POST com <code>logout_token</code> JWT diretamente para os endpoints das
+          RPs via servidor — não depende do browser estar aberto.
+        </li>
+        <li>
+          <strong>Least Privilege / Minimal Scopes</strong> — solicite apenas os scopes
+          necessários para a operação em curso. Tokens com escopo amplo aumentam o
+          impacto de um compromisso. Prefira tokens de curta duração com refresh a
+          tokens longos com escopo amplo.
+        </li>
+      </ul>
+    </div>
+
+    <!-- ANALOGIA -->
     <div id="oa-analogia" class="tab-pane analogy-box">
       <span class="emoji">🏨</span>
-      Você vai a um hotel (Resource Server). Em vez de dar a chave mestre do seu cofre de casa (senha), você pede ao cartório (Authorization Server) uma chave temporária para o quarto específico (access token com scope). O hotel aceita essa chave sem precisar saber sua senha real. Se a chave perder a validade, você volta ao cartório com seu refresh token para pegar outra.
+      <p>Você chega a um hotel (Resource Server). Em vez de entregar a chave mestre do seu cofre (sua senha), você vai ao cartório (Authorization Server), apresenta seu documento (credencial), especifica exatamente quais aposentos quer acessar e por quanto tempo (scopes). O cartório emite uma chave-cartão temporária codificada (Access Token) e uma chave-reserva lacrada (Refresh Token).</p>
+      <p style="margin-top:.75rem;">O porteiro do hotel não precisa telefonar para o cartório a cada entrada: ele lê o chip da chave-cartão e verifica a assinatura digital (JWT local validation). Quando a chave expira, você apresenta a chave-reserva ao cartório para receber uma nova chave-cartão — sem repetir todo o processo de check-in. Se você perder a chave-reserva, informa ao cartório que a invalida imediatamente (token revocation).</p>
+      <p style="margin-top:.75rem;">Com PKCE: é como se, ao pedir a chave, você entregasse um cadeado aberto (code_challenge). O cartório guarda esse cadeado. Só quem possui a chave desse cadeado (code_verifier) pode completar a troca — um ladrão que roube o recibo da solicitação não consegue abrir o cadeado sem a chave original.</p>
     </div>
+
+    <!-- PERGUNTAS EXPERT -->
     <div id="oa-perguntas" class="tab-pane questions">
       <ol>
-        <li>Por que o fluxo Implicit foi depreciado e como PKCE resolve o problema de confidencialidade em SPAs e aplicações mobile?</li>
-        <li>Explique o ataque de "authorization code interception" e como code_verifier + code_challenge impedem sua exploração mesmo com acesso ao código.</li>
-        <li>Qual a diferença entre OAuth 2.0 e OpenID Connect? O que o ID Token garante que o Access Token não garante — e por que você não deve usar o AT para autenticar usuários?</li>
-        <li>Como você implementa logout seguro em OIDC — incluindo front-channel e back-channel logout — e quais são os desafios práticos?</li>
-        <li>Em um cenário de microserviços, como você propaga identidade e autorização entre serviços downstream? Compare token introspection, JWT localmente verificado e mTLS.</li>
+        <li>
+          Descreva passo a passo o fluxo Authorization Code + PKCE para uma SPA.
+          Como o AS valida o <code>code_verifier</code>? Por que <code>S256</code>
+          é obrigatório (e <code>plain</code> inseguro) em redes não confiáveis?
+        </li>
+        <li>
+          Qual a diferença semântica entre <strong>OAuth 2.0</strong> e
+          <strong>OpenID Connect</strong>? Por que usar o Access Token para autenticar
+          o usuário é um antipadrão — e o que pode dar errado em produção ao fazer isso?
+        </li>
+        <li>
+          Compare as estratégias de validação de tokens no Resource Server:
+          <strong>JWT local</strong> (verificação de assinatura via JWKS) vs.
+          <strong>introspecção remota</strong> (RFC 7662). Quando cada abordagem é
+          preferível e como você lida com revogação imediata em JWTs stateless?
+        </li>
+        <li>
+          Em uma arquitetura de microserviços, o serviço A recebe um AT do usuário e
+          precisa chamar o serviço B em nome do mesmo usuário. Descreva o padrão
+          <strong>Token Exchange</strong> (RFC 8693) e compare com simplesmente
+          repassar o AT original. Quais são os riscos de cada abordagem?
+        </li>
+        <li>
+          Explique o padrão <strong>BFF (Backend for Frontend)</strong> no contexto
+          de OAuth 2.0. Quais vulnerabilidades ele mitiga em SPAs? Quais trade-offs
+          arquiteturais ele introduz em termos de escalabilidade e latência?
+        </li>
+        <li>
+          Como funciona o <strong>DPoP (RFC 9449)</strong>? Como ele difere de
+          Bearer tokens em termos de proof-of-possession, e em quais cenários de
+          ameaça ele adiciona proteção real que o Bearer não oferece?
+        </li>
+        <li>
+          Implemente (pseudocódigo ou descrição precisa) o <strong>Back-Channel
+          Logout</strong> do OIDC no lado do Relying Party. Como você valida o
+          <code>logout_token</code> e garante idempotência em caso de reentregas?
+        </li>
+        <li>
+          O <strong>Refresh Token Rotation</strong> mitiga roubo de RT, mas cria
+          o risco de invalidação acidental em clientes com múltiplas abas ou
+          requisições paralelas. Como você projeta uma solução robusta para esse
+          cenário sem sacrificar a segurança da rotação?
+        </li>
       </ol>
     </div>
   </div>
@@ -1128,6 +2297,773 @@
       </ol>
     </div>
   </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ 12 CACHE -->
+<section id="cache">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2>Cache — HTTP · Frontend · Browser · Arquitetura · Segurança</h2>
+  </div>
+
+  <!-- ─── CARD 1: HTTP ─── -->
+  <div class="card">
+    <h3>HTTP Cache <span class="badge">RFC 9111 · Cache-Control · ETag · 304</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'http-cc')">Cache-Control</button>
+      <button class="tab-btn" onclick="switchTab(this,'http-etag')">ETag vs Last-Modified</button>
+      <button class="tab-btn" onclick="switchTab(this,'http-304')">304 Not Modified</button>
+      <button class="tab-btn" onclick="switchTab(this,'http-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'http-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="http-cc" class="tab-pane active block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        <code>Cache-Control</code> é o header primário de controle de cache HTTP (RFC 9111). Pode aparecer na <strong>resposta</strong> (servidor → cache → cliente) e na <strong>requisição</strong> (cliente → cache). Substitui <code>Expires</code> e <code>Pragma</code> (legados).
+      </p>
+      <ul>
+        <li>
+          <strong><code>no-store</code></strong> — nunca armazena a resposta em nenhum cache. Cada request vai obrigatoriamente ao origin. Use para dados altamente sensíveis (banking, medical). Sem cópia em disco, sem cópia em CDN.
+        </li>
+        <li>
+          <strong><code>no-cache</code></strong> — nome enganoso: a resposta <em>pode</em> ser armazenada, mas o cache <strong>deve revalidar</strong> com o origin antes de servir (via ETag/If-None-Match). Se origin retorna 304, a cópia local é servida sem re-download do body.
+        </li>
+        <li>
+          <strong><code>max-age=N</code></strong> — a resposta é "fresh" por N segundos a partir da emissão. Aplica-se a browser e caches compartilhados. Ex.: <code>max-age=3600</code> = 1 hora de freshness.
+        </li>
+        <li>
+          <strong><code>s-maxage=N</code></strong> — como <code>max-age</code> mas somente para caches compartilhados (CDN, proxies). Sobrescreve <code>max-age</code> nesses contextos. Padrão para CDN longa + browser curta: <code>Cache-Control: public, max-age=60, s-maxage=86400</code>.
+        </li>
+        <li>
+          <strong><code>public</code></strong> — qualquer cache (browser, CDN, proxy) pode armazenar a resposta, mesmo que normalmente não pudesse (ex: responses a requests com <code>Authorization</code>).
+        </li>
+        <li>
+          <strong><code>private</code></strong> — somente o browser do usuário pode armazenar. CDNs e proxies compartilhados são proibidos. Padrão para conteúdo personalizado.
+        </li>
+        <li>
+          <strong><code>immutable</code></strong> — o browser não deve revalidar enquanto a resposta for fresh, nem mesmo no reload manual (<kbd>F5</kbd>). Elimina requisições condicionais desnecessárias para assets com hash no nome (<code>main.a3f9.js</code>). Sem efeito em caches compartilhados. Suporte: Chrome, Firefox, Safari modernos.
+        </li>
+        <li>
+          <strong><code>stale-while-revalidate=N</code></strong> — serve a resposta stale <em>imediatamente</em> e atualiza em background. N segundos de janela após o <code>max-age</code> expirar. Latência zero + dados quase atuais. Ex.: <code>max-age=60, stale-while-revalidate=300</code>.
+        </li>
+        <li>
+          <strong><code>stale-if-error=N</code></strong> — serve o dado stale por N segundos se o origin retornar 5xx ou timeout. Resiliência a falhas sem degradação de UX.
+        </li>
+        <li>
+          <strong><code>must-revalidate</code></strong> — quando stale, o cache <em>deve</em> revalidar antes de servir. Proíbe servir stale mesmo em falhas de rede (oposto de <code>stale-if-error</code>). Aplica-se a todos os caches.
+        </li>
+        <li>
+          <strong><code>proxy-revalidate</code></strong> — igual a <code>must-revalidate</code> mas só para caches compartilhados.
+        </li>
+        <li>
+          <strong><code>no-transform</code></strong> — proíbe que proxies/CDNs transformem o payload (ex: não comprimir imagens, não minificar JS).
+        </li>
+        <li>
+          <strong>Diretivas de requisição:</strong> <code>no-cache</code> (força revalidação), <code>no-store</code> (não armazene), <code>max-age=0</code> (trate como stale), <code>max-stale=N</code> (aceita respostas stale por até N segundos), <code>min-fresh=N</code> (exige ao menos N segundos de freshness restantes), <code>only-if-cached</code> (só serve do cache; 504 se não disponível).
+        </li>
+        <li>
+          <strong>Estratégia recomendada por tipo:</strong><br>
+          &nbsp;&nbsp;• HTML: <code>no-cache</code> (revalida sempre via ETag)<br>
+          &nbsp;&nbsp;• Assets com hash: <code>public, max-age=31536000, immutable</code><br>
+          &nbsp;&nbsp;• API REST dados: <code>private, no-cache</code> ou <code>private, max-age=30, stale-while-revalidate=60</code><br>
+          &nbsp;&nbsp;• Fonte/imagem sem hash: <code>public, max-age=86400, stale-while-revalidate=604800</code>
+        </li>
+      </ul>
+    </div>
+
+    <div id="http-etag" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        Validação condicional permite que o cache confirme se sua cópia ainda é válida <em>sem re-baixar o body</em> — economizando apenas latência (no caso de 304) ou banda + latência (em 200).
+      </p>
+      <ul>
+        <li>
+          <strong>ETag (Entity Tag):</strong> identificador opaco do estado atual do recurso — geralmente hash do conteúdo, versão ou timestamp. Servidor envia: <code>ETag: "abc123"</code>. Cliente revalida com: <code>If-None-Match: "abc123"</code>. Se inalterado → <code>304</code>; se mudou → <code>200</code> com novo body e novo ETag.
+        </li>
+        <li>
+          <strong>ETag Forte vs. Fraco:</strong><br>
+          &nbsp;&nbsp;• Forte — <code>"abc123"</code>: identidade byte-a-byte exata. Qualquer alteração, mesmo metadata, muda o ETag.<br>
+          &nbsp;&nbsp;• Fraco — <code>W/"abc123"</code>: equivalência semântica; mesmo conteúdo com encoding diferente pode ter mesmo ETag fraco. Não pode ser usado com <code>If-Range</code> (downloads parciais).
+        </li>
+        <li>
+          <strong>Last-Modified + If-Modified-Since:</strong> alternativa baseada em data (<code>Last-Modified: Wed, 15 Apr 2026 10:00:00 GMT</code>). Cliente revalida com <code>If-Modified-Since: Wed, 15 Apr 2026 10:00:00 GMT</code>. Limitações: granularidade de 1 segundo; problemático em clusters com clocks divergentes; arquivos gerados dinamicamente sempre têm Last-Modified no momento atual mesmo sem mudanças de conteúdo.
+        </li>
+        <li>
+          <strong>Precedência:</strong> quando o servidor envia ambos (ETag + Last-Modified), o cliente envia ambos na revalidação. O servidor usa ETag como critério primário (RFC 9111 §13.1.2) — mais preciso.
+        </li>
+        <li>
+          <strong>ETag para Controle de Concorrência (OCC):</strong> cliente lê o recurso e armazena seu ETag. Na escrita, envia <code>If-Match: "etag-original"</code> (PUT/PATCH/DELETE). Se outro cliente modificou o recurso enquanto isso, o ETag mudou → servidor retorna <code>412 Precondition Failed</code>. Implementação de "lost update prevention" sem locks pessimistas. Base do padrão de optimistic concurrency em REST.
+        </li>
+        <li>
+          <strong>Headers condicionais completos:</strong><br>
+          &nbsp;&nbsp;• <code>If-None-Match</code>: GET/HEAD — retorna 304 se ETag bater (cache hit)<br>
+          &nbsp;&nbsp;• <code>If-Match</code>: PUT/DELETE — executa só se ETag bater (escrita condicional)<br>
+          &nbsp;&nbsp;• <code>If-Modified-Since</code>: GET/HEAD — retorna 304 se não modificado<br>
+          &nbsp;&nbsp;• <code>If-Unmodified-Since</code>: PUT/PATCH — executa só se não modificado desde a data<br>
+          &nbsp;&nbsp;• <code>If-Range</code>: GET com Range — retorna range se ETag bater, caso contrário retorna recurso completo
+        </li>
+        <li>
+          <strong>Geração de ETag no servidor:</strong><br>
+          &nbsp;&nbsp;• Hash do conteúdo (<code>MD5/SHA1</code> do body): forte, correto, mas caro para conteúdo dinâmico.<br>
+          &nbsp;&nbsp;• Versão do registro no banco: <code>"v42"</code> — barato, preciso.<br>
+          &nbsp;&nbsp;• Combinação inode + tamanho + mtime: estratégia padrão de servidores web estáticos (Nginx, Apache). Problemática em NFS e clusters sem inode sincronizado.
+        </li>
+        <li>
+          <strong>Vary header:</strong> expande a cache key incluindo o valor de headers de requisição. <code>Vary: Accept-Encoding</code> cacheia gzip e sem compressão separadamente. <code>Vary: Accept-Language</code> cacheia por idioma. Armadilha: <code>Vary: Cookie</code> ou <code>Vary: Authorization</code> cria uma variante por usuário → hit rate CDN = 0%.
+        </li>
+      </ul>
+    </div>
+
+    <div id="http-304" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        <strong>304 Not Modified</strong> é a resposta do servidor indicando que o recurso não mudou desde a última versão que o cliente possui em cache. Permite revalidação sem re-download do body — economizando banda e reduzindo TTFB.
+      </p>
+      <ul>
+        <li>
+          <strong>Fluxo completo:</strong><br>
+          ① Primeira requisição: <code>GET /style.css</code> → servidor responde <code>200 OK</code> com body + <code>ETag: "v2"</code> + <code>Cache-Control: no-cache</code>.<br>
+          ② Browser armazena o arquivo e o ETag.<br>
+          ③ Segunda requisição (cache stale ou <code>no-cache</code>): <code>GET /style.css</code> com header <code>If-None-Match: "v2"</code>.<br>
+          ④ Servidor compara ETag: se não mudou → <code>304 Not Modified</code> sem body. Se mudou → <code>200 OK</code> com novo conteúdo.<br>
+          ⑤ Browser atualiza os headers da entrada em cache (novo ETag, novo max-age) e usa a cópia local.
+        </li>
+        <li>
+          <strong>304 não tem body:</strong> a RFC proíbe explicitamente body em 304. Os headers da resposta 304 <em>devem</em> ser idênticos ao que seria retornado em uma resposta 200 (ETag, Cache-Control, Content-Location, Expires, Vary) para que o cache atualize seus metadados.
+        </li>
+        <li>
+          <strong>Impacto de performance:</strong> uma resposta 304 trafega tipicamente 200–400 bytes (somente headers) versus kilobytes ou megabytes do body. O benefício é maior para: recursos grandes (imagens, scripts), conexões lentas, mobile. Para recursos pequenos (<1KB), o overhead de um round-trip pode exceder o ganho — considere <code>max-age</code> com inline em vez de revalidação.
+        </li>
+        <li>
+          <strong>304 com Last-Modified:</strong> fluxo paralelo usando datas. Requisição envia <code>If-Modified-Since: [data]</code>. Servidor retorna 304 se o recurso não foi modificado após essa data.
+        </li>
+        <li>
+          <strong>Quando 304 <em>não</em> é retornado:</strong><br>
+          &nbsp;&nbsp;• <code>Cache-Control: no-store</code> — o cliente não armazena, então não envia condicionais.<br>
+          &nbsp;&nbsp;• Hard reload (<kbd>Ctrl+Shift+R</kbd>) — browser envia <code>Cache-Control: no-cache</code> e <code>Pragma: no-cache</code> sem <code>If-None-Match</code>.<br>
+          &nbsp;&nbsp;• Primeira visita / cache limpo — sem ETag armazenado, sem conditional request.<br>
+          &nbsp;&nbsp;• Response com <code>max-age</code> ainda fresh — browser não revalida, usa direto do cache (não há request nenhuma).
+        </li>
+        <li>
+          <strong>304 vs. 200 com <code>max-age</code>:</strong><br>
+          &nbsp;&nbsp;• <code>max-age</code> fresh: zero requests — resposta direta do cache local. Mais rápido.<br>
+          &nbsp;&nbsp;• <code>no-cache</code> + 304: um round-trip sem body. Garante que o conteúdo está atualizado com mínimo de banda.<br>
+          &nbsp;&nbsp;• <code>no-store</code>: um round-trip com body completo. Mais lento, mais banda.
+        </li>
+        <li>
+          <strong>Condicional request em APIs REST:</strong> clientes HTTP que implementam cache corretamente (ex: Axios com adaptadores de cache, bibliotecas de HTTP Java/Go) enviam condicionais automaticamente se a resposta anterior continha ETag. Isso reduz drasticamente a carga em APIs com dados que mudam raramente.
+        </li>
+      </ul>
+    </div>
+
+    <div id="http-analogia" class="tab-pane analogy-box">
+      <span class="emoji">📰</span>
+      <p>Uma assinatura de jornal. Com <strong><code>max-age</code></strong>, você tem a edição de hoje em casa — não liga para a banca verificar se saiu outra. Com <strong><code>no-cache</code></strong>, você liga para a banca a cada leitura: "saiu edição nova?" — se não, você usa o jornal que já tem (<strong>304</strong>); se sim, um entregador traz a nova edição (<strong>200</strong>). Com <strong><code>no-store</code></strong>, você nunca guarda nenhum jornal — vai pessoalmente à banca toda vez.</p>
+      <p style="margin-top:.75rem;"><strong>ETag</strong> é o número de edição no cabeçalho do jornal. Você diz à banca: "tenho a edição 847 — mudou algo?" Se a banca tem a 848, manda tudo. Se ainda é a 847, diz apenas "não mudou" — você poupa o transporte do jornal inteiro.</p>
+      <p style="margin-top:.75rem;"><strong><code>stale-while-revalidate</code></strong>: você lê o jornal de ontem enquanto o entregador já saiu buscar o de hoje em background. Quando ele voltar, você tem a versão nova para a próxima leitura — sem esperar.</p>
+    </div>
+
+    <div id="http-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Um recurso crítico de dashboard tem <code>Cache-Control: public, max-age=0, must-revalidate</code> com ETag. Em alto tráfego (10k req/s), todos os usuários fazem revalidação simultânea após a expiração. O servidor origin fica sobrecarregado com 304s. Como você redesenha a estratégia de cache para manter freshness alta sem sobrecarregar o origin?</li>
+        <li>Descreva o race condition clássico entre ETag + If-Match para OCC em PUT /resource. O que exatamente acontece quando dois clientes leem o ETag "v1" e ambos tentam atualizar ao mesmo tempo? Quais status codes retornam para cada um, e como o cliente que recebeu 412 deve se comportar?</li>
+        <li><code>Vary: Accept-Encoding</code> é necessário para servir gzip e br corretamente, mas <code>Vary: Cookie</code> destrói o cache CDN. Como você projeta uma arquitetura onde conteúdo semi-personalizado (ex: usuário logado vs. anônimo) ainda aproveita CDN cache — sem usar <code>Vary: Cookie</code>?</li>
+        <li>Um cliente faz hard reload (<kbd>Ctrl+Shift+R</kbd>). Descreva byte-a-byte o que muda nos headers da requisição HTTP em relação a uma navegação normal. Por que o servidor recebe a requisição sem o <code>If-None-Match</code> e qual é o impacto no servidor para assets grandes?</li>
+        <li>Explique como <code>stale-while-revalidate</code> e <code>stale-if-error</code> interagem: se o origin retorna 503 dentro da janela de <code>stale-while-revalidate</code>, o que o cache faz? E se já passou a janela de SWR mas ainda está dentro de <code>stale-if-error</code>? Desenhe o fluxo de decisão.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ─── CARD 2: FRONTEND ─── -->
+  <div class="card">
+    <h3>Frontend Cache <span class="badge">React Query · SWR · staleTime · Revalidation</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'fe-rq')">React Query vs SWR</button>
+      <button class="tab-btn" onclick="switchTab(this,'fe-stale')">staleTime vs cacheTime</button>
+      <button class="tab-btn" onclick="switchTab(this,'fe-reval')">Revalidation</button>
+      <button class="tab-btn" onclick="switchTab(this,'fe-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'fe-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="fe-rq" class="tab-pane active block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        React Query (TanStack Query) e SWR são bibliotecas de <em>server-state management</em> para React. Gerenciam fetching, caching, sincronização e revalidação de dados remotos — substituindo o padrão manual de <code>useEffect + useState + loading/error</code>.
+      </p>
+      <ul>
+        <li>
+          <strong>React Query — conceitos centrais:</strong><br>
+          &nbsp;&nbsp;• <code>useQuery(queryKey, queryFn, options)</code> — hook de leitura. <code>queryKey</code> é a cache key (array serializado); <code>queryFn</code> é a função de fetch.<br>
+          &nbsp;&nbsp;• <code>useMutation(mutationFn, options)</code> — para escrita (POST/PUT/DELETE). Permite callbacks <code>onSuccess</code>, <code>onError</code>, <code>onMutate</code>.<br>
+          &nbsp;&nbsp;• <code>QueryClient</code> — instância central do cache. Compartilhada via <code>QueryClientProvider</code>.<br>
+          &nbsp;&nbsp;• <code>queryClient.invalidateQueries(key)</code> — marca queries como stale e re-fetcha se houver subscriber ativo.<br>
+          &nbsp;&nbsp;• <code>queryClient.prefetchQuery(key, fn)</code> — pré-carrega no cache sem subscriber (ex: hover em link).<br>
+          &nbsp;&nbsp;• <code>queryClient.setQueryData(key, data)</code> — atualização manual do cache (optimistic update).
+        </li>
+        <li>
+          <strong>SWR — conceitos centrais:</strong><br>
+          &nbsp;&nbsp;• <code>useSWR(key, fetcher, config)</code> — hook único para leitura.<br>
+          &nbsp;&nbsp;• <code>mutate(key, data, options)</code> — atualização manual e revalidação. <code>mutate(key)</code> sem dados força re-fetch.<br>
+          &nbsp;&nbsp;• <code>useSWRMutation(key, fetcher)</code> — para mutations (escrita).<br>
+          &nbsp;&nbsp;• Deduplicação nativa: múltiplos componentes com a mesma key compartilham uma única request em voo.<br>
+          &nbsp;&nbsp;• Middleware: pipeline de plugins para logging, mock, autenticação, etc.
+        </li>
+        <li>
+          <strong>React Query vs. SWR — diferenças práticas:</strong><br>
+          &nbsp;&nbsp;• RQ tem API mais rica: Infinite Query, Suspense mode nativo, devtools avançado, SSR/RSC primeiro-classe.<br>
+          &nbsp;&nbsp;• SWR é mais leve (~4KB gz) e mais simples — ideal para projetos menores ou quando SWR basta.<br>
+          &nbsp;&nbsp;• RQ tem <code>gcTime</code> (garbage collection) separado do <code>staleTime</code>; SWR mantém o cache indefinidamente enquanto houver subscriber.<br>
+          &nbsp;&nbsp;• RQ v5 renomeou <code>cacheTime</code> → <code>gcTime</code> para clareza semântica.<br>
+          &nbsp;&nbsp;• Ambos suportam: SSR com hydration, optimistic updates, background sync, window focus refetch, retry exponential backoff.
+        </li>
+        <li>
+          <strong>Optimistic Updates (React Query):</strong><br>
+          ① <code>onMutate</code>: atualiza o cache imediatamente com o valor esperado (<code>setQueryData</code>); salva o snapshot do valor anterior.<br>
+          ② <code>onError</code>: rollback para o snapshot salvo.<br>
+          ③ <code>onSettled</code>: invalida a query para sincronizar com o servidor independente do resultado. UX imediata, consistência garantida.
+        </li>
+      </ul>
+    </div>
+
+    <div id="fe-stale" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        Em React Query, dois timers independentes controlam o ciclo de vida de um dado em cache: <strong>staleTime</strong> (quando re-fetchar?) e <strong>gcTime/cacheTime</strong> (quando deletar do cache?).
+      </p>
+      <ul>
+        <li>
+          <strong><code>staleTime</code> (padrão: 0ms):</strong> quanto tempo os dados são considerados "fresh" (frescos). Enquanto fresh, React Query <em>não fará re-fetch</em>, mesmo que o componente remonte, a janela ganhe foco ou a conexão seja restabelecida. Após o staleTime, os dados ficam "stale" — o cache ainda os tem, mas um re-fetch em background será disparado na próxima oportunidade (mount, focus, reconnect).
+        </li>
+        <li>
+          <strong><code>gcTime</code> / <code>cacheTime</code> (padrão: 5 min):</strong> quanto tempo dados de uma query <em>sem subscribers ativos</em> permanecem no cache antes de serem removidos pelo garbage collector. Se o componente que usa a query desmontar, o timer do <code>gcTime</code> começa. Se o componente remontar antes do timer expirar, o usuário vê os dados em cache imediatamente (possivelmente stale) enquanto o re-fetch ocorre em background.
+        </li>
+        <li>
+          <strong>Relação entre os dois:</strong><br>
+          &nbsp;&nbsp;• <code>staleTime=0, gcTime=5min</code> (padrão): dados ficam stale imediatamente, mas permanecem no cache 5 min após desmontar. Re-fetch em todo mount/focus.<br>
+          &nbsp;&nbsp;• <code>staleTime=60000, gcTime=5min</code>: dados fresh por 1 min — sem re-fetch nesse período. Excelente para dados que mudam raramente.<br>
+          &nbsp;&nbsp;• <code>staleTime=Infinity</code>: dados nunca ficam stale automaticamente. Só re-fetcha via <code>invalidateQueries</code> manual. Use para dados estáticos (configurações, enums).<br>
+          &nbsp;&nbsp;• <code>gcTime=0</code>: cache removido imediatamente ao desmontar. Sem experiência de cache entre navegações — raramente desejável.<br>
+          &nbsp;&nbsp;• <code>staleTime &gt; gcTime</code>: tecnicamente possível mas incoerente — o cache seria removido antes dos dados ficarem stale.
+        </li>
+        <li>
+          <strong>Visualização do ciclo de vida:</strong><br>
+          <code>fetch</code> → dados chegam → <strong>[fresh: staleTime]</strong> → dados ficam stale → <strong>[stale: em cache, re-fetch no próximo trigger]</strong> → componente desmonta → <strong>[inactive: gcTime contando]</strong> → gcTime expira → <strong>[removed]</strong>
+        </li>
+        <li>
+          <strong>SWR equivalentes:</strong><br>
+          &nbsp;&nbsp;• <code>dedupingInterval</code> (1000ms padrão) — janela de deduplicação. Múltiplas chamadas dentro desse intervalo compartilham a mesma promise em voo.<br>
+          &nbsp;&nbsp;• <code>revalidateIfStale</code> (true padrão) — equivale a <code>staleTime=0</code> em React Query.<br>
+          &nbsp;&nbsp;• SWR não tem <code>gcTime</code> — mantém o cache enquanto houver subscriber ou até a chave ser sobrescrita.
+        </li>
+        <li>
+          <strong>Escolhas por domínio:</strong><br>
+          &nbsp;&nbsp;• Dados do usuário logado (perfil): <code>staleTime: 60_000</code> (1 min)<br>
+          &nbsp;&nbsp;• Listas de produtos: <code>staleTime: 30_000</code><br>
+          &nbsp;&nbsp;• Configurações estáticas: <code>staleTime: Infinity</code><br>
+          &nbsp;&nbsp;• Dados de tempo real (chat, notificações): <code>staleTime: 0</code> + <code>refetchInterval: 5000</code>
+        </li>
+      </ul>
+    </div>
+
+    <div id="fe-reval" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        Revalidação é o processo de re-fetchar dados que estão stale para mantê-los atualizados. React Query e SWR implementam revalidação automática em múltiplos triggers.
+      </p>
+      <ul>
+        <li>
+          <strong>refetchOnMount (RQ) / revalidateOnMount (SWR):</strong> quando um componente monta e os dados estão stale, dispara re-fetch imediatamente. Com <code>staleTime &gt; 0</code>, só re-fetcha se os dados estiverem stale no momento do mount. Opções RQ: <code>true</code> (se stale), <code>'always'</code> (sempre), <code>false</code> (nunca).
+        </li>
+        <li>
+          <strong>refetchOnWindowFocus (RQ) / revalidateOnFocus (SWR):</strong> quando o usuário retorna à aba/janela, re-fetcha dados stale. Simula o comportamento de "puxar para atualizar" em mobile. Padrão: <code>true</code> em ambos. Desabilite para dados que raramente mudam ou quando o fetch é caro: <code>refetchOnWindowFocus: false</code>.
+        </li>
+        <li>
+          <strong>refetchOnReconnect (RQ) / revalidateOnReconnect (SWR):</strong> ao reconectar à internet após offline, re-fetcha dados stale. Essencial para apps PWA / mobile.
+        </li>
+        <li>
+          <strong>refetchInterval (RQ) / refreshInterval (SWR):</strong> polling — re-fetcha a cada N ms. Útil para: dashboards em tempo real, status de jobs, notificações. Opção avançada (RQ): <code>refetchIntervalInBackground</code> controla se o polling continua quando a aba está em background.
+        </li>
+        <li>
+          <strong>Revalidação manual — invalidateQueries (RQ):</strong><br>
+          <code>queryClient.invalidateQueries({ queryKey: ['todos'] })</code> — marca todas as queries com chave <code>['todos']</code> (ou prefixo) como stale e re-fetcha se houver subscriber. O padrão pós-mutation: invalidar no <code>onSuccess</code> da useMutation.<br>
+          <code>queryClient.refetchQueries({ queryKey: ['todos'] })</code> — força re-fetch independente do staleTime.
+        </li>
+        <li>
+          <strong>Revalidação manual — mutate (SWR):</strong><br>
+          <code>mutate('/api/todos')</code> — revalida a key globalmente (todas as instâncias).<br>
+          <code>mutate('/api/todos', newData, { revalidate: false })</code> — atualização pessimista (sem re-fetch, confia no dado local).<br>
+          <code>mutate('/api/todos', updateFn, { optimisticData })</code> — optimistic update com rollback automático em erro.
+        </li>
+        <li>
+          <strong>Stale-While-Revalidate no contexto frontend:</strong> quando um componente monta com dados stale em cache, React Query/SWR servem os dados em cache imediatamente (sem loading spinner) enquanto o re-fetch acontece em background. Quando os novos dados chegam, a UI atualiza suavemente. Isso elimina "flash of loading" em navegações de volta para uma rota já visitada — experiência percebida como instantânea.
+        </li>
+        <li>
+          <strong>Deduplicação de requests:</strong> se 10 componentes na mesma árvore chamam <code>useQuery(['user', id])</code> simultaneamente, apenas 1 request HTTP é feita. Todos os componentes compartilham o resultado quando ele chegar. Evita o problema clássico de "N componentes = N fetches".
+        </li>
+        <li>
+          <strong>Suspense mode:</strong> React Query v5 e SWR suportam Suspense — a query integra com o mecanismo de Suspense do React. O componente "suspende" durante o fetch e o boundary mais próximo exibe o fallback. Elimina estados de loading explícitos no componente.
+        </li>
+      </ul>
+    </div>
+
+    <div id="fe-analogia" class="tab-pane analogy-box">
+      <span class="emoji">📱</span>
+      <p><strong>staleTime</strong> é a validade do iogurte na geladeira. Enquanto no prazo, você come sem checar se veio algo novo no mercado. Quando vence, na próxima vez que abrir a geladeira você compra um novo — mas ainda come o que tem enquanto o pedido não chega.</p>
+      <p style="margin-top:.75rem;"><strong>gcTime</strong> é quando você joga fora iogurtes que ficaram na geladeira sem ninguém consumir. Se ninguém abriu a geladeira por 5 minutos, você descarta o estoque. Se alguém abrir antes, ainda está lá.</p>
+      <p style="margin-top:.75rem;"><strong>refetchOnWindowFocus</strong> é o impulso de conferir o celular toda vez que você volta à mesa após uma reunião — "será que chegou alguma mensagem nova?" SWR e React Query fazem o mesmo com os dados: toda vez que o usuário volta à aba, checam se há algo novo, silenciosamente em background.</p>
+    </div>
+
+    <div id="fe-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Um componente de dashboard usa <code>useQuery(['metrics'], fetchMetrics, { staleTime: 30000 })</code>. O usuário abre a página, navega para outra rota (componente desmonta), e volta após 2 minutos. Descreva exatamente o que acontece com o estado do cache durante esse fluxo — quando o gcTime começa, o que o usuário vê ao voltar, e como o staleTime afeta o re-fetch. O que mudaria se <code>gcTime: 0</code>?</li>
+        <li>Como você implementa optimistic update em React Query para um botão "curtir" que deve: atualizar a contagem imediatamente na UI, persistir via API POST, e reverter com a contagem original em caso de erro? Escreva o código com <code>useMutation</code>, <code>onMutate</code>, <code>onError</code> e <code>onSettled</code>.</li>
+        <li>Em um app com 50 componentes que chamam <code>useSWR('/api/user')</code> simultaneamente (ex: header, sidebar, perfil), quantas requests HTTP são feitas? Como a deduplicação funciona internamente no SWR? O que acontece se um dos componentes chama <code>mutate('/api/user')</code>?</li>
+        <li>Você está migrando de Redux + thunks para React Query. Um fluxo crítico depende de dados de 3 endpoints sequencialmente dependentes (B depende de A, C depende de B). Como você implementa dependent queries em React Query, garantindo que cada query só dispara quando a anterior completou? Como você trata o caso em que uma das queries falha no meio?</li>
+        <li>Compare <code>refetchOnWindowFocus: true</code> e um sistema de WebSocket que empurra invalidações do servidor. Quais são os trade-offs de cada abordagem em termos de: (a) freshness garantida, (b) carga no servidor, (c) complexidade de implementação, (d) comportamento offline? Em quais cenários um é claramente superior ao outro?</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ─── CARD 3: BROWSER ─── -->
+  <div class="card">
+    <h3>Browser Cache <span class="badge">Cache API · Service Workers · Estratégias</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'br-cacheapi')">Cache API</button>
+      <button class="tab-btn" onclick="switchTab(this,'br-sw')">Service Workers</button>
+      <button class="tab-btn" onclick="switchTab(this,'br-estrategias')">Estratégias SW</button>
+      <button class="tab-btn" onclick="switchTab(this,'br-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'br-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="br-cacheapi" class="tab-pane active block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        A <strong>Cache API</strong> é uma interface de armazenamento de pares Request/Response, disponível em Service Workers e em qualquer contexto de página segura (HTTPS). Diferente do HTTP cache, ela é completamente controlada pelo desenvolvedor — sem expiração automática.
+      </p>
+      <ul>
+        <li>
+          <strong>Interface CacheStorage (<code>caches</code>):</strong><br>
+          &nbsp;&nbsp;• <code>caches.open(name)</code> → Promise&lt;Cache&gt; — abre ou cria um cache com o nome dado.<br>
+          &nbsp;&nbsp;• <code>caches.has(name)</code> → boolean — verifica se existe.<br>
+          &nbsp;&nbsp;• <code>caches.keys()</code> → string[] — lista todos os caches (útil para limpeza de versões antigas).<br>
+          &nbsp;&nbsp;• <code>caches.delete(name)</code> → boolean — remove um cache inteiro.
+        </li>
+        <li>
+          <strong>Interface Cache — operações:</strong><br>
+          &nbsp;&nbsp;• <code>cache.put(request, response)</code> — armazena par explicitamente. Response pode ser criada (<code>new Response(body, init)</code>) ou clonada (<code>response.clone()</code>). <strong>Atenção:</strong> uma Response só pode ser consumida uma vez — sempre clone antes de armazenar: <code>cache.put(req, res.clone())</code>.<br>
+          &nbsp;&nbsp;• <code>cache.add(url)</code> — faz fetch da URL + armazena no cache.<br>
+          &nbsp;&nbsp;• <code>cache.addAll([urls])</code> — fetch + cache de múltiplas URLs atomicamente. Falha se qualquer uma falhar — use para precaching do app shell.<br>
+          &nbsp;&nbsp;• <code>cache.match(request, options)</code> → Response | undefined — lookup. <code>options.ignoreSearch</code> ignora query string na comparação; <code>options.ignoreVary</code> ignora o header Vary.<br>
+          &nbsp;&nbsp;• <code>cache.matchAll(request)</code> → Response[] — retorna todas as variantes.<br>
+          &nbsp;&nbsp;• <code>cache.delete(request)</code> → boolean — remove uma entrada.
+        </li>
+        <li>
+          <strong>Sem expiração automática:</strong> diferente do HTTP cache, a Cache API não expira entradas automaticamente. O desenvolvedor é 100% responsável por: limpeza de versões antigas (no evento <code>activate</code> do SW), invalidação após atualizações, e gestão de quota. Use versionamento de cache name: <code>'app-v2'</code>.
+        </li>
+        <li>
+          <strong>Quota e Storage:</strong> <code>navigator.storage.estimate()</code> retorna <code>{ quota, usage }</code> em bytes. Em Chrome, a quota é tipicamente 60% do disco disponível por origem. Quando esgotada, escrita na Cache API falha. Use <code>navigator.storage.persist()</code> para pedir quota persistente (não evictada sob pressão).
+        </li>
+        <li>
+          <strong>Cache API vs. IndexedDB:</strong> Cache API armazena pares Request/Response (HTTP) — ideal para assets e respostas de API serializadas. IndexedDB armazena dados estruturados arbitrários — ideal para estado de aplicação, dados offline, listas de itens. Ambos são acessíveis em SW e na página.
+        </li>
+        <li>
+          <strong>Acesso fora do Service Worker:</strong> a Cache API é acessível em qualquer contexto seguro (HTTPS + localhost). Permite que o código da página popule o cache diretamente, útil para SSR/SSG com precaching manual sem Service Worker.
+        </li>
+      </ul>
+    </div>
+
+    <div id="br-sw" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        Service Workers são proxies programáticos entre o browser e a rede — scripts JavaScript que interceptam requisições de rede, gerenciam o cache e habilitam funcionalidades offline. Rodam em thread separada (sem acesso ao DOM).
+      </p>
+      <ul>
+        <li>
+          <strong>Registro:</strong>
+          <code>navigator.serviceWorker.register('/sw.js', { scope: '/' })</code> — o <code>scope</code> define quais URLs o SW controla (padrão: diretório do arquivo <code>sw.js</code>). O SW deve estar no root para controlar toda a origem.
+        </li>
+        <li>
+          <strong>Ciclo de vida:</strong><br>
+          &nbsp;&nbsp;• <strong>installing</strong>: SW baixado e parseado. Evento <code>install</code> dispara — ideal para precaching do app shell com <code>cache.addAll([...])</code>. Chame <code>self.skipWaiting()</code> aqui para pular a espera e ativar imediatamente.<br>
+          &nbsp;&nbsp;• <strong>installed / waiting</strong>: SW instalado mas aguardando que as abas com o SW antigo fechem. Um SW novo fica "esperando" até que não haja mais clientes com a versão antiga.<br>
+          &nbsp;&nbsp;• <strong>activating</strong>: SW antigo está sendo substituído. Evento <code>activate</code> dispara — ideal para limpar caches de versões anteriores. Chame <code>self.clients.claim()</code> para tomar controle de abas abertas imediatamente (sem esperar reload).<br>
+          &nbsp;&nbsp;• <strong>activated</strong>: SW ativo, controlando todas as requisições no scope.<br>
+          &nbsp;&nbsp;• <strong>idle / terminated</strong>: SW pode ser encerrado pelo browser a qualquer momento quando não há eventos. É recriado automaticamente quando necessário.
+        </li>
+        <li>
+          <strong>Evento <code>fetch</code>:</strong> intercepta toda requisição de rede dentro do scope. <code>event.respondWith(promise&lt;Response&gt;)</code> permite servir qualquer Response — do cache, da rede, ou sintetizada. Se <code>respondWith</code> não for chamado, a requisição prossegue normalmente.
+        </li>
+        <li>
+          <strong>Background Sync API:</strong> permite adiar operações que falharam por falta de conexão. O SW registra um sync tag (<code>registration.sync.register('send-message')</code>); quando a conexão é restabelecida, o browser dispara o evento <code>sync</code> no SW, que tenta a operação novamente. Ideal para formulários offline, analytics, likes sem conexão.
+        </li>
+        <li>
+          <strong>Push API:</strong> recebe notificações push mesmo com o site fechado. O servidor envia via Push Service (Google FCM, Mozilla AutoPush); o SW recebe o evento <code>push</code> e exibe a notificação via <code>registration.showNotification()</code>. Requer permissão explícita do usuário.
+        </li>
+        <li>
+          <strong>skipWaiting + clients.claim:</strong> padrão para atualizações imediatas de SW. Sem eles, o novo SW pode ficar "esperando" por horas se o usuário tiver a aba aberta. Com eles, a atualização é instantânea mas pode causar inconsistência se assets com cache antigo ainda estiverem carregados. Avalie o trade-off para cada app.
+        </li>
+        <li>
+          <strong>Workbox (Google):</strong> biblioteca sobre Service Workers com estratégias pré-construídas, precaching declarativo, routing, background sync e broadcast update. Elimina boilerplate de SW manual. CLI <code>workbox-cli</code> e integração com webpack/Vite.
+        </li>
+      </ul>
+    </div>
+
+    <div id="br-estrategias" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        As estratégias de cache em Service Worker definem o comportamento do evento <code>fetch</code>: quando usar o cache, quando usar a rede, e o que fazer quando ambos falham.
+      </p>
+      <ul>
+        <li>
+          <strong>Cache First (Cache Falling Back to Network):</strong><br>
+          Tenta o cache → se miss, vai à rede → armazena no cache → retorna.<br>
+          <em>Use para:</em> assets versionados (JS/CSS/imagens com hash), fontes, ícones. TTL implícito via versionamento da cache key.<br>
+          <em>Risco:</em> conteúdo stale se o arquivo for atualizado sem mudar a URL.
+        </li>
+        <li>
+          <strong>Network First (Network Falling Back to Cache):</strong><br>
+          Tenta a rede → se falhar (timeout/offline), usa o cache.<br>
+          <em>Use para:</em> HTML, dados de API onde freshness é importante, conteúdo frequentemente atualizado.<br>
+          <em>Risco:</em> lento em conexões instáveis (aguarda o timeout da rede antes de usar o cache). Configure <code>networkTimeoutSeconds</code> para limitar a espera.
+        </li>
+        <li>
+          <strong>Stale While Revalidate:</strong><br>
+          Retorna o cache imediatamente (sem latência) + dispara re-fetch da rede em background + atualiza o cache com a resposta da rede.<br>
+          <em>Use para:</em> recursos que devem carregar rápido mas que se beneficiam de atualizações frequentes — avatares, listas de artigos, conteúdo editorial.<br>
+          <em>Detalhe:</em> o usuário vê o dado do cache nesta visita; na próxima visita, verá o dado atualizado. Aceita 1 visita de defasagem.
+        </li>
+        <li>
+          <strong>Cache Only:</strong><br>
+          Serve exclusivamente do cache; falha se não estiver no cache.<br>
+          <em>Use para:</em> recursos do app shell que você garante estar no cache no <code>install</code> event. Útil para modo offline estrito.
+        </li>
+        <li>
+          <strong>Network Only:</strong><br>
+          Vai sempre à rede; nunca usa cache.<br>
+          <em>Use para:</em> analytics, pagamentos, requests que não devem ser respondidos offline, dados em tempo real críticos.
+        </li>
+        <li>
+          <strong>Combinações e roteamento:</strong> em produção, você aplica estratégias diferentes por padrão de URL:
+          <br><code>/static/</code> → Cache First (immutable assets)
+          <br><code>/api/</code> → Network First (com fallback)
+          <br><code>/*.html</code> → Network First ou SWR
+          <br><code>/images/</code> → Stale While Revalidate
+          <br>Workbox permite declarar isso com <code>registerRoute(matcher, strategy)</code>.
+        </li>
+        <li>
+          <strong>Precaching vs. Runtime Caching:</strong><br>
+          &nbsp;&nbsp;• <em>Precache</em>: lista explícita de URLs cacheadas no <code>install</code>. Garante offline funcionando de imediato. Workbox gera a lista via CLI/build.<br>
+          &nbsp;&nbsp;• <em>Runtime cache</em>: URLs são cacheadas dinamicamente conforme são requisitadas, com a estratégia configurada. Não garante offline na primeira visita.
+        </li>
+      </ul>
+    </div>
+
+    <div id="br-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🏪</span>
+      <p>O <strong>Service Worker</strong> é um gerente de loja offline que intercepta todos os pedidos de clientes (requisições). Ele tem um estoque próprio (<strong>Cache API</strong>) e acesso ao fornecedor externo (rede/servidor).</p>
+      <p style="margin-top:.75rem;">As estratégias são suas políticas de atendimento:<br>
+      <strong>Cache First</strong>: "se temos no estoque, entrego sem ligar pro fornecedor."<br>
+      <strong>Network First</strong>: "ligo pro fornecedor primeiro; se não atender, uso o estoque."<br>
+      <strong>Stale While Revalidate</strong>: "entrego do estoque agora enquanto peço reposição em paralelo."<br>
+      <strong>Cache Only</strong>: "só entrego o que temos no estoque — sem exceção."<br>
+      <strong>Network Only</strong>: "sempre peço ao fornecedor, nunca uso o estoque."</p>
+      <p style="margin-top:.75rem;">O evento <strong>install</strong> é o dia de inauguração: você enche o estoque com os itens básicos garantidos (<em>precache</em>). O <strong>activate</strong> é quando você descarta produtos da coleção anterior que não servem mais.</p>
+    </div>
+
+    <div id="br-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Um PWA usa Cache First para todos os assets estáticos com Workbox. Você fez um deploy crítico de segurança. Usuários com o SW antigo continuam servindo a versão vulnerável do <code>app.js</code> do cache. Descreva o ciclo de vida completo da atualização do SW e quais mecanismos (<code>skipWaiting</code>, <code>clients.claim</code>, Broadcast Channel API) você usaria para forçar a atualização sem exigir que o usuário feche todas as abas manualmente.</li>
+        <li>Como a estratégia Stale While Revalidate no Service Worker se diferencia da diretiva <code>stale-while-revalidate</code> do Cache-Control HTTP? Quais são as diferenças em: (a) quem controla a lógica, (b) granularidade de configuração, (c) acesso ao dado atualizado, (d) comportamento no segundo request do mesmo usuário?</li>
+        <li>Um usuário preenche um formulário de checkout offline. O SW usa Background Sync para tentar o POST quando a conexão for restabelecida. Descreva como você garante: idempotência da operação, que o usuário receba feedback de sucesso/falha, e o que acontece se o SW for encerrado antes da sincronização completar.</li>
+        <li>A Cache API não tem expiração automática. Projete uma estratégia de versionamento + limpeza para um app com: assets estáticos (raramente mudam), respostas de API cacheadas (TTL de 5 min), e dados de usuário (devem ser limpos no logout). Como você implementa isso sem criar memory leak no cache?</li>
+        <li>Qual é o impacto de <code>cache.addAll([urls])</code> falhar para uma URL na lista durante o <code>install</code> event? Como você torna o precaching resiliente a falhas parciais sem comprometer o app shell essencial?</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ─── CARD 4: ARQUITETURA ─── -->
+  <div class="card">
+    <h3>Arquitetura de Cache <span class="badge">CDN · BFF Caching · Cache Layers</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'arq-cdn')">CDN</button>
+      <button class="tab-btn" onclick="switchTab(this,'arq-bff')">BFF Caching</button>
+      <button class="tab-btn" onclick="switchTab(this,'arq-layers')">Cache Layers</button>
+      <button class="tab-btn" onclick="switchTab(this,'arq-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'arq-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="arq-cdn" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        CDNs são redes de caches geograficamente distribuídos (Points of Presence — PoPs) que servem conteúdo próximo ao usuário, reduzindo latência e carga no origin.
+      </p>
+      <ul>
+        <li>
+          <strong>Fluxo básico:</strong> usuário → PoP da CDN mais próximo → cache hit? serve diretamente (latência ~5–30ms) : request ao origin (latência +100–300ms) → armazena + serve.
+        </li>
+        <li>
+          <strong>s-maxage vs. max-age na CDN:</strong> <code>s-maxage</code> controla TTL apenas para caches compartilhados; <code>max-age</code> controla browser. Estratégia assimétrica: <code>Cache-Control: public, max-age=60, s-maxage=604800</code> — browser revalida a cada minuto, CDN mantém por 7 dias. Ideal para conteúdo público com alta frequência de acesso.
+        </li>
+        <li>
+          <strong>Cache Key:</strong> por padrão, URL completa (método + scheme + host + path + query). CDNs permitem customizar — ex: ignorar certos parâmetros de tracking (<code>utm_*</code>) para evitar fragmentação de cache. Cloudflare: <em>Cache Rules</em>; Fastly: <em>VCL custom hash</em>.
+        </li>
+        <li>
+          <strong>Surrogate Keys / Cache Tags:</strong> associe respostas a tags de domínio via header <code>Cache-Tag: product-42</code> (Cloudflare) ou <code>Surrogate-Key: product-42</code> (Fastly/Varnish). Invalidação em massa por tag: <code>PURGE /tags/product-42</code> invalida todas as URLs tagueadas — granular, eficiente, sem conhecer cada URL. Essencial para conteúdo editorial e e-commerce.
+        </li>
+        <li>
+          <strong>Origin Shield (Shield PoP):</strong> PoP intermediário entre os edge nodes e o origin. Quando múltiplos edges têm cache miss simultâneo (ex: após invalidação), apenas o Shield consulta o origin — os edges consultam o Shield. Reduz drasticamente o tráfego ao origin (request collapse).
+        </li>
+        <li>
+          <strong>Stale-while-revalidate na CDN:</strong> serve a versão stale com zero latência enquanto busca a atualização do origin em background. O usuário seguinte recebe a versão atualizada. Altamente eficaz em CDNs com alta concorrência — evita stampede no origin após expiração.
+        </li>
+        <li>
+          <strong>Estratégias de Purge/Invalidação:</strong><br>
+          &nbsp;&nbsp;• Por URL — simples, O(n) para muitas páginas.<br>
+          &nbsp;&nbsp;• Por Surrogate Key/Tag — O(1) para n páginas, a mais eficiente.<br>
+          &nbsp;&nbsp;• Wildcard (<code>/api/products/*</code>) — suporte varia por CDN.<br>
+          &nbsp;&nbsp;• Global purge — opção nuclear; use só em emergências (deploy com bug crítico).
+        </li>
+        <li>
+          <strong>CDN Hit Rate e diagnóstico:</strong> hit rate = cache_hits / (cache_hits + cache_misses). Alvo: &gt;90% para assets estáticos, &gt;70% para conteúdo dinâmico. Causas de baixo hit rate: <code>Vary: Cookie</code>/Authorization, query strings únicas por usuário, TTLs curtos, alta proporção de conteúdo personalizado.
+        </li>
+        <li>
+          <strong>Edge Compute (Cloudflare Workers, Fastly Compute@Edge):</strong> código JavaScript/WASM rodando no PoP da CDN. Permite lógica de cache customizada: A/B testing no edge, geolocalização, personalização sem ir ao origin, respostas sintéticas.
+        </li>
+      </ul>
+    </div>
+
+    <div id="arq-bff" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        O padrão <strong>BFF (Backend for Frontend)</strong> introduz uma camada de servidor específica para o cliente entre o frontend e os microserviços downstream. Além de agregação, é um ponto natural de cache — o BFF pode cachear dados que o cliente precisaria buscar em múltiplas APIs.
+      </p>
+      <ul>
+        <li>
+          <strong>Por que o BFF é estratégico para cache:</strong><br>
+          &nbsp;&nbsp;• Consolida N chamadas de API numa única response para o cliente — reduz round trips e oportunidades de cache miss.<br>
+          &nbsp;&nbsp;• Sabe exatamente o que o cliente precisa — pode cachear apenas os campos relevantes, sem overfetching.<br>
+          &nbsp;&nbsp;• Controla os headers de Cache-Control da resposta ao client — pode impor políticas que os microserviços não expõem diretamente.<br>
+          &nbsp;&nbsp;• Gerencia tokens de autenticação (OAuth access/refresh tokens em HttpOnly cookies) — o client nunca toca nos tokens, e o BFF pode cachear dados usando os tokens internamente.
+        </li>
+        <li>
+          <strong>Cache compartilhado vs. per-user no BFF:</strong><br>
+          &nbsp;&nbsp;• <em>Compartilhado (Redis):</em> dados que são iguais para todos os usuários — catálogos de produtos, configurações, dados públicos. Cache key = rota + parâmetros. Cacheável também na CDN.<br>
+          &nbsp;&nbsp;• <em>Per-user (Redis com session key):</em> dados personalizados — carrinho, feed, notificações. Cache key = user_id + rota. Não cacheável na CDN (<code>Cache-Control: private</code>). TTL curto (30–300s).
+        </li>
+        <li>
+          <strong>BFF como cache de agregação:</strong> a página de dashboard precisa de dados de 5 microserviços. Sem BFF, o cliente faz 5 requests em paralelo. Com BFF, 1 request ao BFF que: (1) verifica cache → hit: retorna tudo; miss: faz 5 requests em paralelo aos serviços, agrega, armazena no cache e retorna. Para a segunda requisição de qualquer usuário, é um cache hit.
+        </li>
+        <li>
+          <strong>Invalidação no BFF:</strong> ao contrário do browser cache, o BFF pode subscrever eventos de domínio (Kafka, webhooks dos serviços) para invalidar proativamente entradas relevantes. Ex: evento <code>product.updated</code> → BFF invalida todas as chaves de cache relacionadas ao produto no Redis.
+        </li>
+        <li>
+          <strong>Rate limiting e colapso de requisições:</strong> o BFF pode implementar request coalescing — se 100 usuários requisitam o mesmo dado simultaneamente e é um cache miss, apenas 1 requisição vai ao serviço downstream. As outras 99 aguardam o resultado. Padrão de "singleflight" — evita cache stampede no nível de BFF.
+        </li>
+        <li>
+          <strong>Riscos do BFF como cache:</strong><br>
+          &nbsp;&nbsp;• Ponto único de falha se o BFF cair — use HA e circuit breaker.<br>
+          &nbsp;&nbsp;• Cache stale se a invalidação falhar — monitore janela de inconsistência.<br>
+          &nbsp;&nbsp;• BFF "gordo" pode virar gargalo se cachear dados muito pesados — use paginação.<br>
+          &nbsp;&nbsp;• Complexidade de invalidação com múltiplos serviços upstream.
+        </li>
+      </ul>
+    </div>
+
+    <div id="arq-layers" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        Sistemas de alto tráfego usam cache em múltiplas camadas — cada uma com latência, escopo e custo diferentes. A chave é entender o que cada camada pode e não pode cachear.
+      </p>
+      <ul>
+        <li>
+          <strong>L1 — In-Process (aplicação):</strong><br>
+          Latência: ~ns. Escopo: por instância da aplicação. Volátil (perdido no restart). Sem overhead de rede.<br>
+          Libs: Caffeine (Java), node-lru-cache (Node.js), cachetools (Python), groupcache (Go).<br>
+          <em>Use para:</em> dados que não mudam entre requests (configurações, feature flags, enums). TTL muito curto (30–60s) para não servir stale demais em múltiplas instâncias.<br>
+          <em>Problema:</em> inconsistência entre instâncias — instância A tem cache quente com dado v1 enquanto instância B já recebeu o v2. Mitigar com TTL curto ou invalidação via pub/sub (Redis Pub/Sub notifica todas as instâncias para limpar L1).
+        </li>
+        <li>
+          <strong>L2 — Distributed Cache (Redis/Memcached):</strong><br>
+          Latência: ~0.1–1ms. Escopo: compartilhado entre todas as instâncias. Sobrevive a restarts da aplicação.<br>
+          Cache-Aside, Read-Through, Write-Through/Behind.<br>
+          <em>Use para:</em> sessões, tokens, dados de domínio computados, rate limiting state.
+        </li>
+        <li>
+          <strong>L3 — CDN / Edge:</strong><br>
+          Latência: ~5–50ms. Escopo: global por PoP. Apenas conteúdo público (sem <code>Authorization</code>, sem <code>private</code>).<br>
+          <em>Use para:</em> assets estáticos, respostas de API públicas, HTML de páginas indexáveis.
+        </li>
+        <li>
+          <strong>L4 — Browser / Client:</strong><br>
+          Latência: ~0ms (memory cache) a ~1ms (disk cache). Escopo: por usuário/dispositivo. Controlado por Cache-Control.<br>
+          <em>Use para:</em> assets com hash (immutable), dados de sessão do app (React Query / SWR), app shell via Service Worker.
+        </li>
+        <li>
+          <strong>Estratégia de leitura (cache lookup cascade):</strong><br>
+          Request → L4 (browser) → miss → L3 (CDN) → miss → L2 (Redis) → miss → L1 (in-process) → miss → Origin (banco/serviço). Na prática, a ordem é determinada pela arquitetura: o browser consulta o CDN (não o Redis diretamente).
+        </li>
+        <li>
+          <strong>Consistência entre camadas:</strong> o maior desafio é garantir que quando o dado muda na origem, todas as camadas são invalidadas na ordem correta:<br>
+          ① Atualizar banco → ② Invalidar L2 (Redis) → ③ Purge CDN (via API) → ④ Browser invalida automaticamente no próximo request condicional (ETag).<br>
+          Se L3 não for invalidado junto com L2, usuários que acertam o CDN recebem dados stale mesmo após atualização do banco.
+        </li>
+        <li>
+          <strong>Cache Warming:</strong> após um deploy ou falha, as camadas de cache estão frias (cold start). Estratégias:<br>
+          &nbsp;&nbsp;• Pré-aquecimento via script que gera requests aos endpoints mais críticos antes do tráfego chegar.<br>
+          &nbsp;&nbsp;• Gradual rollout (canary) — uma instância aquece o cache antes do traffic shift completo.<br>
+          &nbsp;&nbsp;• Read-through com fallback gracioso — primeira request é lenta, mas não quebra.
+        </li>
+      </ul>
+    </div>
+
+    <div id="arq-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🏗️</span>
+      <p><strong>Cache layers</strong> são como o sistema de atendimento de uma grande empresa. O <strong>L4 (browser)</strong> é sua mesa — documentos que você usa hoje estão na sua gaveta, acesso em segundos. O <strong>L3 (CDN)</strong> é o arquivo do andar, com cópias dos documentos mais pedidos da empresa inteira — caminhada de 2 minutos. O <strong>L2 (Redis)</strong> é o arquivo central do prédio — acesso em 5 minutos via elevador. O <strong>L1 in-process</strong> é o post-it na sua tela — literalmente instantâneo mas só serve para você.</p>
+      <p style="margin-top:.75rem;">O <strong>BFF</strong> é o assistente que conhece seus projetos: quando você precisa de 5 documentos de departamentos diferentes, ele vai buscá-los em paralelo, agrupa num único pacote e traz tudo de uma vez — e já guarda uma cópia para a próxima vez que você ou um colega pedir o mesmo.</p>
+    </div>
+
+    <div id="arq-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Você tem uma API de catálogo de produtos com 10M de itens e 50k req/s. Projete a arquitetura de cache completa (L1 → L4), especificando: o que cachear em cada camada, TTLs, estratégias de invalidação quando um produto é atualizado, e como evitar que um product update cause Cache Avalanche em todas as camadas simultaneamente.</li>
+        <li>Um BFF agrega dados de 3 microserviços (User Service, Order Service, Product Service). Descreva como você implementa cache de agregação com invalidação event-driven (CDC + Kafka) para que, quando Order Service atualiza um pedido, apenas as entradas de cache que contêm dados daquele pedido sejam invalidadas — sem purgar todo o cache do BFF.</li>
+        <li>Em uma arquitetura com CDN + Redis L2 + in-process L1, um bug crítico em produção exige rollback imediato. Quais são as etapas em ordem exata para garantir que usuários não recebam o código bugado de nenhuma das camadas de cache? Quais camadas você controla, quais dependem de TTL natural, e como você minimiza a janela de exposição?</li>
+        <li>O <code>Vary: Cookie</code> é necessário para servir conteúdo diferente para usuários logados vs. anônimos, mas destrói o hit rate da CDN. Descreva duas arquiteturas alternativas que permitem CDN caching de conteúdo "quase personalizado" sem <code>Vary: Cookie</code>: uma usando Edge Compute (Cloudflare Workers) e outra usando dois endpoints separados.</li>
+        <li>Como você monitora a saúde do sistema de cache em produção? Especifique: quais métricas para cada camada (L1/L2/L3/L4), alertas críticos, e como você diagnostica se um aumento de latência p99 é causado por degradação do Redis vs. invalidação excessiva na CDN vs. cold start de L1.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ─── CARD 5: SEGURANÇA ─── -->
+  <div class="card">
+    <h3>Segurança de Cache <span class="badge">Cache Leakage · XSS + Storage · Cache Poisoning</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'sec-leak')">Cache Leakage</button>
+      <button class="tab-btn" onclick="switchTab(this,'sec-xss')">XSS + Storage</button>
+      <button class="tab-btn" onclick="switchTab(this,'sec-poison')">Cache Poisoning</button>
+      <button class="tab-btn" onclick="switchTab(this,'sec-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'sec-perguntas')">Perguntas Expert</button>
+    </div>
+
+    <div id="sec-leak" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        <strong>Cache Leakage</strong> ocorre quando dados privados ou sensíveis de um usuário são armazenados em caches compartilhados e servidos para outros usuários. Uma das classes de vulnerabilidades mais comuns e subestimadas em produção.
+      </p>
+      <ul>
+        <li>
+          <strong>Causa raiz mais comum:</strong> resposta autenticada (dados do usuário A) armazenada em cache CDN ou proxy e servida ao usuário B. Basta um <code>Cache-Control: max-age=300</code> em uma rota autenticada sem <code>private</code> para que a CDN armazene a resposta do primeiro request e a sirva para todos os requests subsequentes àquela URL.
+        </li>
+        <li>
+          <strong>Regra de ouro:</strong> qualquer resposta que varia por usuário (contém dados personalizados, sessão, informações de conta) <strong>deve</strong> ter <code>Cache-Control: private</code> ou <code>no-store</code>. A ausência dessas diretivas em respostas com dados pessoais é uma <strong>vulnerabilidade de privacidade</strong> (LGPD, GDPR).
+        </li>
+        <li>
+          <strong>Responses com <code>Authorization</code> header:</strong> por padrão (RFC 9111 §3.5), caches compartilhados <em>não devem</em> armazenar responses a requests que contêm <code>Authorization</code>, a menos que a resposta inclua explicitamente <code>Cache-Control: public</code> ou <code>s-maxage</code>. Muitas CDNs seguem essa regra por padrão, mas nem todos os proxies internos seguem.
+        </li>
+        <li>
+          <strong>Cookie-based auth e CDN:</strong> se a autenticação usa cookies (não <code>Authorization</code> header), a proteção RFC acima não se aplica. A CDN pode cachear a resposta a não ser que <code>private</code> esteja explícito. Sempre inclua <code>Cache-Control: private, no-store</code> em qualquer rota que leia o cookie de sessão.
+        </li>
+        <li>
+          <strong>Vary: Cookie — armadilha:</strong> <code>Vary: Cookie</code> cria uma variante de cache por valor de cookie. Embora correto semanticamente, (a) aumenta o tamanho do cache CDN, (b) em CDNs que usam o valor do cookie como parte da cache key, um cookie com valor único por usuário = cache miss para todos. Não é segurança; é disfuncionalidade. Use <code>private</code>.
+        </li>
+        <li>
+          <strong>CDN com múltiplos tenants:</strong> CDNs de cloud servem múltiplos clientes na mesma infraestrutura. Certifique-se de que a configuração de cache key isola sua origem das demais. Hosts virtuais distintos têm namespaces separados na maioria das CDNs, mas misconfigurações de CNAME podem criar colisões. Valide com pentest de CDN isolation.
+        </li>
+        <li>
+          <strong>ETag como fingerprint (histórico):</strong> browsers usavam ETags para rastrear usuários entre sessões incógnitas — o ETag persistia no cache mesmo após limpar cookies. Browsers modernos limpam ETags junto com cookies no modo privado. Mas ETags em subresources (fontes, scripts) podem ainda ser usados para correlação.
+        </li>
+        <li>
+          <strong>X-Cache / X-Cache-Status headers:</strong> headers de CDN que indicam cache hit/miss e o PoP. Vazar esses headers em respostas públicas pode revelar topologia de infraestrutura. Remova em produção ou restrinja a IPs internos.
+        </li>
+        <li>
+          <strong>Diagnóstico de leakage:</strong> use ferramentas como Burp Suite ou curl para verificar: (1) faça request autenticado, copie a URL, faça o mesmo request sem autenticação ou em sessão diferente. Se receber o mesmo conteúdo, há leakage. Em CDN: compare <code>Age: N</code> — se N &gt; 0 em request sem auth, é cache hit de uma resposta privada.
+        </li>
+      </ul>
+    </div>
+
+    <div id="sec-xss" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        XSS (Cross-Site Scripting) e storage do browser interagem diretamente: onde você armazena tokens e dados sensíveis determina o que um atacante pode roubar via injeção de JavaScript.
+      </p>
+      <ul>
+        <li>
+          <strong><code>localStorage</code> e <code>sessionStorage</code>:</strong><br>
+          Acessíveis a qualquer JavaScript da mesma origem — incluindo scripts injetados via XSS.<br>
+          <code>localStorage.getItem('access_token')</code> é trivial para um atacante com XSS.<br>
+          <em>Nunca armazene:</em> JWT access tokens, OAuth tokens, session IDs, PII.<br>
+          <em>Use para:</em> preferências de UI, dados não sensíveis, estado de app que não é segredo.<br>
+          Diferença entre os dois: <code>localStorage</code> persiste entre sessões; <code>sessionStorage</code> é limpo ao fechar a aba — mas ambos são igualmente vulneráveis a XSS enquanto a página está aberta.
+        </li>
+        <li>
+          <strong>Cookies com <code>HttpOnly</code>:</strong><br>
+          <code>HttpOnly</code> — inacessível ao JavaScript; protege contra XSS que tenta ler o token.<br>
+          <code>Secure</code> — só enviado em HTTPS.<br>
+          <code>SameSite=Strict</code> — cookie não enviado em nenhum request cross-site (proteção CSRF forte).<br>
+          <code>SameSite=Lax</code> — enviado em navegações GET de top-level (ex: clicar num link), mas não em requests Ajax cross-site. Padrão em browsers modernos.<br>
+          <code>SameSite=None; Secure</code> — enviado cross-site. Necessário para cookies em iframes embeddados (OAuth redirects), mas remove proteção CSRF — exige CSRF token adicional.<br>
+          <em>Conclusão:</em> HttpOnly cookie é o storage mais seguro para tokens de autenticação.
+        </li>
+        <li>
+          <strong>IndexedDB:</strong> storage estruturado de alta capacidade. Acessível a qualquer JS da origem. Vulnerável a XSS exatamente como localStorage. Use para: dados offline de app, não para tokens.
+        </li>
+        <li>
+          <strong>Cache API (Service Worker):</strong> acessível ao SW e às páginas da origem via <code>caches</code>. Menos trivialmente explorada via XSS (requer código específico). Mas se um atacante pode registrar um SW malicioso (via XSS persistente + SW scope adequado), ele pode interceptar todas as requisições da origem — ataque mais severo que roubar um token.
+        </li>
+        <li>
+          <strong>Memory (variável JS — padrão para SPAs):</strong> mais seguro para access tokens — não persiste em storage, não acessível via DevTools de forma trivial, limpo ao recarregar.<br>
+          Fluxo recomendado (RFC 9700 / Auth0 recommendation):<br>
+          ① Access Token em memória (curto prazo, ex: 15 min).<br>
+          ② Refresh Token em HttpOnly cookie (não acessível ao JS).<br>
+          ③ Quando o AT expira, o app faz request ao endpoint de refresh — o RT é enviado automaticamente pelo browser via cookie.<br>
+          ④ Servidor valida RT e retorna novo AT.<br>
+          Um XSS não consegue extrair o RT (HttpOnly) nem o AT (memória — só existe enquanto a página está aberta).
+        </li>
+        <li>
+          <strong>Content Security Policy (CSP) como defesa em profundidade:</strong> mesmo que XSS seja injetado, um CSP restritivo (<code>script-src 'self'</code>) impede a execução de scripts inline e externos não autorizados. Camada adicional que não substitui o storage seguro, mas limita o raio de explosão.
+        </li>
+        <li>
+          <strong>Subresource Integrity (SRI):</strong> garante que scripts externos (CDN) não foram adulterados. <code>&lt;script src="cdn.js" integrity="sha384-..."&gt;</code>. Se o arquivo da CDN for substituído por um atacante, o browser rejeita. Relevante para o cenário de CDN comprometida que entrega XSS em escala.
+        </li>
+      </ul>
+    </div>
+
+    <div id="sec-poison" class="tab-pane block-points">
+      <p style="margin-bottom:.75rem;color:var(--muted);font-size:.9rem;">
+        <strong>Cache Poisoning</strong> é um ataque onde o atacante manipula o que é armazenado no cache, fazendo com que o cache sirva conteúdo malicioso ou incorreto para outros usuários.
+      </p>
+      <ul>
+        <li>
+          <strong>HTTP Cache Poisoning:</strong> o atacante encontra um header de requisição que (1) influencia a resposta do servidor mas (2) não faz parte da cache key da CDN. Ele envia uma requisição com esse header malicioso, o servidor reflete o valor na resposta, a CDN armazena a resposta envenenada e a serve para todos os usuários sem esse header.<br>
+          <em>Exemplo clássico:</em> servidor usa <code>X-Forwarded-Host</code> para construir links (<code>script src="https://[X-Forwarded-Host]/app.js"</code>). Atacante envia <code>X-Forwarded-Host: evil.com</code>. CDN não inclui esse header na cache key. CDN armazena resposta com <code>script src="https://evil.com/app.js"</code> e serve para todos.<br>
+          <strong>Defesa:</strong> normalize e valide todos os headers que influenciam respostas; adicione headers críticos à cache key da CDN; não construa URLs a partir de headers de request sem allowlist estrita.
+        </li>
+        <li>
+          <strong>Web Cache Deception:</strong> atacante induz a vítima a acessar uma URL "disfarçada" de asset estático, ex: <code>/account/profile/photo.jpg</code>. O servidor ignora a extensão e retorna a página de perfil autenticada da vítima. A CDN, configurada para cachear <code>.jpg</code>, armazena o conteúdo privado. O atacante acessa a mesma URL sem autenticação e obtém os dados privados da vítima.<br>
+          <strong>Defesa:</strong> nunca sirva conteúdo dinâmico/autenticado em URLs com extensões de asset estático; use <code>Content-Type</code> real como parte da cache key; configure CDN para cachear apenas respostas com Content-Type de asset estático (<code>image/*, text/css, application/javascript</code>).
+        </li>
+        <li>
+          <strong>Response Splitting / Header Injection:</strong> se valores de input do usuário são refletidos em headers HTTP sem sanitização, o atacante pode injetar newlines (<code>\r\n</code>) para inserir headers adicionais ou até split a resposta em duas — a segunda sendo uma resposta completamente fabricada que o cache armazena. Defesa: sanitize toda saída em headers; use frameworks que escapam headers automaticamente.
+        </li>
+        <li>
+          <strong>DNS Cache Poisoning:</strong> atacante injeta registros DNS falsos no cache de um resolver. Usuários que consultam aquele resolver são direcionados a IPs maliciosos. Defesa: DNSSEC (registros DNS assinados criptograficamente); DoH (DNS over HTTPS); DoT (DNS over TLS); validação DNSSEC no resolver.
+        </li>
+        <li>
+          <strong>Cache Key Injection:</strong> se a cache key é construída a partir de input do usuário sem sanitização (ex: <code>cache_key = tenant_id + ":" + resource_id</code>), o atacante pode forjar chaves com separadores: <code>tenant_id = "A:B"</code> → colide com chave do tenant B. Defesa: use hashing dos componentes da cache key; não use delimitadores que podem aparecer nos valores; sanitize todos os componentes.
+        </li>
+        <li>
+          <strong>Redis sem autenticação:</strong> Redis exposto sem <code>requirepass</code> + ACLs em rede acessível = trivialmente explorado. Atacante pode sobrescrever qualquer chave de cache, injetar dados maliciosos, comprometer sessões. Defesa: Redis nunca exposto à internet; VPC privada; <code>requirepass</code> forte + ACL por usuário; TLS (<code>tls-port</code>); firewall de porta.
+        </li>
+        <li>
+          <strong>CDN Origin Header Manipulation:</strong> CDNs encaminham requests ao origin com headers adicionais (<code>True-Client-IP</code>, <code>CF-Connecting-IP</code>). Se o origin confia nesses headers para autorização ou logging sem validar a origem da requisição, atacantes que acessam o origin diretamente (bypass CDN) podem falsificar esses headers. Defesa: origin deve aceitar requests apenas do IP range da CDN; valide o shared secret entre CDN e origin.
+        </li>
+      </ul>
+    </div>
+
+    <div id="sec-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🔒</span>
+      <p><strong>Cache Leakage</strong> é como um hotel que usa a mesma fotocópia do quarto 301 (com os pertences do hóspede visíveis) para todos os recém-chegados do mesmo andar. O hóspede original deixou dados privados expostos porque o recepcionista (CDN) não percebeu que o documento era privado (<code>Cache-Control: private</code> ausente).</p>
+      <p style="margin-top:.75rem;"><strong>Cache Poisoning</strong> é um cliente que convence o balconista a colocar uma instrução falsa no mural interno da loja. Todo funcionário que consulta o mural segue a instrução envenenada — sem saber que foi adulterada. Os clientes legítimos sofrem as consequências sem nenhum sinal de alerta.</p>
+      <p style="margin-top:.75rem;"><strong>localStorage vs. cookie HttpOnly</strong> é a diferença entre deixar a chave do cofre em cima da mesa (qualquer visita maliciosa [XSS] vê e copia) vs. soldar a chave dentro do cofre (o gerente [browser] a usa automaticamente, mas nem você pode vê-la com código — apenas o servidor pode abrir o cofre).</p>
+    </div>
+
+    <div id="sec-perguntas" class="tab-pane questions">
+      <ol>
+        <li>Você está fazendo um pentest de CDN cache leakage. Descreva o procedimento de teste passo a passo: quais URLs testar primeiro, quais headers enviar, como interpretar o header <code>Age</code> na resposta, e como confirmar que uma resposta autenticada está sendo servida a usuários não autenticados.</li>
+        <li>Um atacante descobre que o servidor usa o header <code>X-Forwarded-Proto</code> para decidir se links gerados usam <code>http://</code> ou <code>https://</code>, e que a CDN não inclui esse header na cache key. Descreva o ataque de HTTP Cache Poisoning completo — request do atacante, o que a CDN armazena, e o impacto para usuários legítimos. Como você corrige na CDN e no servidor?</li>
+        <li>Argumente: "tokens de autenticação em memory (variável JS) são mais seguros que em localStorage, mas menos seguros que em HttpOnly cookie". Para cada comparação, descreva o cenário de ataque específico que justifica a afirmação — não apenas a regra geral.</li>
+        <li>Um Service Worker com vulnerabilidade de XSS persistente é registrado em seu domínio. O que exatamente o atacante pode fazer com acesso ao SW? Como isso é mais perigoso do que XSS sem SW? Quais mecanismos do browser (CSP, Feature Policy, SW scope) limitam o dano?</li>
+        <li>Sua API de BFF usa Redis para cache. Um log de segurança mostra que o Redis recebeu um comando <code>FLUSHALL</code> inesperado. Descreva: (a) como o atacante pode ter chegado ao Redis, (b) o impacto imediato no sistema (Cache Avalanche), (c) as ações imediatas de contenção, e (d) as mudanças arquiteturais para prevenir recorrência.</li>
+      </ol>
+    </div>
+  </div>
+
 </section>
 
 </div><!-- /container -->
