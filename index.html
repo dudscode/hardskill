@@ -377,6 +377,12 @@
       <div class="tc-sub">S3 · CloudFront · WAF · Segurança</div>
       <div class="tc-arrow">Abrir →</div>
     </div>
+    <div class="topic-card" onclick="showSection('wc','🧩 Web Components &amp; MFE')">
+      <div class="tc-icon">🧩</div>
+      <div class="tc-title">Web Components &amp; MFE</div>
+      <div class="tc-sub">Custom Elements · Shadow DOM · Micro-frontends</div>
+      <div class="tc-arrow">Abrir →</div>
+    </div>
   </div>
 </div>
 
@@ -399,12 +405,45 @@
     </div>
     <div id="cors-resumo" class="tab-pane active block-points">
       <ul>
-        <li><strong>Política Same-Origin (SOP):</strong> por padrão o browser bloqueia requisições de uma origem para outra diferente (protocolo+host+porta).</li>
-        <li><strong>CORS relaxa essa política</strong> via cabeçalhos HTTP que o servidor envia.</li>
-        <li><strong>Preflight (OPTIONS):</strong> para métodos não-simples (PUT, DELETE, cabeçalhos customizados), o browser envia uma request OPTIONS antes da real.</li>
-        <li><strong>Cabeçalhos chave:</strong> <code>Access-Control-Allow-Origin</code>, <code>Access-Control-Allow-Methods</code>, <code>Access-Control-Allow-Headers</code>, <code>Access-Control-Allow-Credentials</code>.</li>
-        <li><strong>Wildcard <code>*</code> e credenciais</strong> não podem coexistir — ao usar cookies/tokens, a origem deve ser explícita.</li>
-        <li><strong>Erro comum:</strong> configurar CORS no frontend — ele só existe no servidor.</li>
+        <li>
+          <strong>Same-Origin Policy (SOP) — o que exatamente bloqueia:</strong>
+          Origin = <code>protocolo + host + porta</code>. A SOP bloqueia a <em>leitura</em> de respostas cross-origin pelo JS — não impede o <em>envio</em> da request. <code>fetch("https://api.outro.com")</code> chega ao servidor; o browser impede o JS de ler a resposta. Exceções nativas da SOP: <code>&lt;img&gt;</code>, <code>&lt;script&gt;</code>, <code>&lt;link&gt;</code>, <code>&lt;form&gt;</code> — estes enviam e exibem sem CORS, mas JS não acessa o conteúdo (ex: canvas tainting com imagens cross-origin).
+        </li>
+        <li>
+          <strong>Requests "simples" (sem preflight):</strong> método <code>GET</code>, <code>HEAD</code> ou <code>POST</code> + headers apenas do conjunto seguro (<code>Accept</code>, <code>Accept-Language</code>, <code>Content-Language</code>, <code>Content-Type</code> restrito a <code>text/plain</code>, <code>application/x-www-form-urlencoded</code>, <code>multipart/form-data</code>). Qualquer desvio → preflight. <code>Content-Type: application/json</code> já dispara preflight.
+        </li>
+        <li>
+          <strong>Preflight (OPTIONS) em detalhe:</strong> o browser envia <code>OPTIONS</code> com <code>Access-Control-Request-Method</code> e <code>Access-Control-Request-Headers</code>. O servidor responde com o que permite. Apenas se o preflight retornar 2xx e os headers permitirem, a request real é enviada. O preflight pode ser cacheado com <code>Access-Control-Max-Age: 600</code> (Chrome limita a 7200s, Firefox a 86400s).
+        </li>
+        <li>
+          <strong>Headers de resposta CORS — todos:</strong>
+          <ul>
+            <li><code>Access-Control-Allow-Origin</code>: <code>*</code> ou origin explícita. Com credenciais, obrigatoriamente explícita.</li>
+            <li><code>Access-Control-Allow-Methods</code>: lista de métodos permitidos.</li>
+            <li><code>Access-Control-Allow-Headers</code>: headers customizados permitidos (ex: <code>Authorization, Content-Type, X-Request-ID</code>).</li>
+            <li><code>Access-Control-Allow-Credentials: true</code>: autoriza cookies, Authorization e TLS client certs cross-origin.</li>
+            <li><code>Access-Control-Expose-Headers</code>: headers da resposta que o JS pode acessar (além dos 7 "safe" por padrão: <code>Cache-Control, Content-Language, Content-Length, Content-Type, Expires, Last-Modified, Pragma</code>).</li>
+            <li><code>Access-Control-Max-Age</code>: segundos para cachear o preflight.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Credentialed requests:</strong> <code>fetch(url, { credentials: 'include' })</code> ou <code>xhr.withCredentials = true</code>. Exige <strong>obrigatoriamente</strong>: (1) <code>Access-Control-Allow-Origin</code> com a origin exata — nunca <code>*</code>; (2) <code>Access-Control-Allow-Credentials: true</code>. Sem ambos, o browser bloqueia a leitura mesmo que a request chegue ao servidor.
+        </li>
+        <li>
+          <strong>Private Network Access (CORS-PNA — Chrome ≥ 94):</strong> requests de uma origem pública para rede privada (192.168.x.x, localhost) exigem preflight adicional com <code>Access-Control-Allow-Private-Network: true</code>. Previne que sites maliciosos acessem dispositivos locais (roteadores, câmeras, IoT) usando o browser da vítima como proxy.
+        </li>
+        <li>
+          <strong>Vary: Origin — obrigatório:</strong> quando o servidor retorna CORS com origin dinâmica (da whitelist), deve incluir <code>Vary: Origin</code> na resposta. Sem ele, CDNs podem cachear a resposta de uma origin e servi-la para outra — cache poisoning CORS.
+        </li>
+        <li>
+          <strong>Misconfigs críticas:</strong>
+          <ul>
+            <li>Refletir qualquer <code>Origin</code> sem validação = bypass total da SOP.</li>
+            <li>Aceitar <code>Origin: null</code> (iframes sandboxed, <code>file://</code>, <code>data:</code>) — atacante força null origin via <code>&lt;iframe sandbox&gt;</code>.</li>
+            <li>Validar <code>endsWith('.example.com')</code> em vez de whitelist → subdomain takeover explora isso.</li>
+            <li>CORS com wildcard <code>*</code> em API que usa cookies é silenciosamente ignorado (credenciais bloqueadas), mas muitos devs não percebem e migram para origin dinâmica sem validação.</li>
+          </ul>
+        </li>
       </ul>
     </div>
     <div id="cors-analogia" class="tab-pane analogy-box">
@@ -471,12 +510,62 @@
     </div>
     <div id="csp-resumo" class="tab-pane active block-points">
       <ul>
-        <li><strong>Defesa contra XSS:</strong> informa ao browser quais fontes de conteúdo são confiáveis.</li>
-        <li><strong>Diretivas principais:</strong> <code>default-src</code>, <code>script-src</code>, <code>style-src</code>, <code>img-src</code>, <code>connect-src</code>, <code>frame-ancestors</code>.</li>
-        <li><strong>Nonces e hashes</strong> permitem scripts inline sem abrir <code>'unsafe-inline'</code> — cada request gera um nonce único.</li>
-        <li><strong>Report-Only:</strong> modo de auditoria — viola mas não bloqueia; envia reports para um endpoint via <code>report-uri</code> / <code>report-to</code>.</li>
-        <li><strong>Strict CSP:</strong> usa nonce + <code>'strict-dynamic'</code> para eliminar listas de hosts (que podem ser bypassadas via CDN comprometido).</li>
-        <li><strong>Entregue via</strong> header HTTP ou meta tag (limitado — sem <code>frame-ancestors</code>).</li>
+        <li>
+          <strong>O que o CSP realmente faz:</strong> instrui o browser a recusar carregar ou executar recursos que não correspondam à política declarada. É uma segunda linha de defesa contra XSS — não substitui sanitização de input, mas limita o dano quando XSS ocorre. Entregue via header HTTP (<code>Content-Security-Policy</code>) ou <code>&lt;meta http-equiv&gt;</code> (limitado: sem <code>frame-ancestors</code>, sem report-uri).
+        </li>
+        <li>
+          <strong>Diretivas de fetch — hierarquia de fallback:</strong>
+          <ul>
+            <li><code>default-src</code>: fallback para qualquer diretiva de fetch não declarada explicitamente.</li>
+            <li><code>script-src</code>: controla JS — inline, externo, eval. A mais crítica.</li>
+            <li><code>style-src</code>: CSS inline e externo.</li>
+            <li><code>img-src</code>: imagens (incluindo <code>data:</code> URIs — cuidado com exfiltração via CSS <code>background-image</code>).</li>
+            <li><code>connect-src</code>: <code>fetch()</code>, XHR, WebSocket, <code>EventSource</code>, <code>navigator.sendBeacon()</code>.</li>
+            <li><code>font-src</code>: fontes via <code>@font-face</code>.</li>
+            <li><code>media-src</code>: <code>&lt;audio&gt;</code> e <code>&lt;video&gt;</code>.</li>
+            <li><code>object-src</code>: <code>&lt;object&gt;</code>, <code>&lt;embed&gt;</code> — sempre <code>'none'</code> em apps modernas (Flash está morto).</li>
+            <li><code>worker-src</code>: Web Workers e Shared Workers.</li>
+            <li><code>frame-src</code>: iframes que <em>esta</em> página carrega.</li>
+            <li><code>frame-ancestors</code>: quem pode embutir <em>esta</em> página (substitui <code>X-Frame-Options</code>, suporta múltiplas origens).</li>
+            <li><code>base-uri</code>: restringe <code>&lt;base href&gt;</code> — sempre <code>'self'</code> ou <code>'none'</code> para bloquear base tag injection.</li>
+            <li><code>form-action</code>: para onde <code>&lt;form&gt;</code> pode submeter.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Keywords de source:</strong>
+          <ul>
+            <li><code>'none'</code>: bloqueia completamente.</li>
+            <li><code>'self'</code>: apenas mesma origem.</li>
+            <li><code>'unsafe-inline'</code>: <strong>evitar</strong> — permite qualquer <code>&lt;script&gt;</code> inline e atributos de evento (os principais vetores de XSS).</li>
+            <li><code>'unsafe-eval'</code>: permite <code>eval()</code>, <code>new Function()</code>, <code>setTimeout(string)</code> — evitar salvo em casos muito específicos.</li>
+            <li><code>'unsafe-hashes'</code>: permite handlers inline específicos (ex: <code>onclick="fn()"</code>) identificados por hash.</li>
+            <li><code>'strict-dynamic'</code>: propaga confiança de um script com nonce válido para scripts que ele cria dinamicamente; ignora allowlists de host quando presente.</li>
+            <li><code>'wasm-unsafe-eval'</code>: permite compilação de WebAssembly sem <code>'unsafe-eval'</code> completo.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Nonces — o padrão correto:</strong> gerar criptograficamente no servidor a cada request (<code>crypto.randomBytes(16).toString('base64')</code>). Inserir no header: <code>script-src 'nonce-{valor}'</code>. No HTML: <code>&lt;script nonce="{valor}"&gt;</code>. Nunca reusar, nunca expor em cache, nunca em CSP estática. Nonce invalida <code>'unsafe-inline'</code> em CSP Level 2+.
+        </li>
+        <li>
+          <strong>Hash-based CSP:</strong> <code>script-src 'sha256-base64encodedHash='</code>. Hash é calculado sobre o conteúdo exato do script (sem espaços extras). Qualquer alteração invalida. Útil para scripts inline estáticos. Não funciona para scripts externos (hash seria do conteúdo remoto, não verificado pelo browser via CSP).
+        </li>
+        <li>
+          <strong>Strict CSP (melhor prática — Google recomenda):</strong>
+          <br><code>Content-Security-Policy: script-src 'nonce-{r}' 'strict-dynamic'; object-src 'none'; base-uri 'none';</code>
+          <br>Com <code>'strict-dynamic'</code>, a allowlist de hosts é ignorada — scripts criados por um script confiável (com nonce) herdam a confiança. Elimina a necessidade de manter listas de CDNs que podem ser comprometidos ou ter endpoints JSONP exploráveis.
+        </li>
+        <li>
+          <strong>Trusted Types (Chromium/Edge):</strong> prevenção de DOM XSS via sink injection. Com <code>require-trusted-types-for 'script'</code> no CSP, atribuições diretas a sinks perigosos (<code>innerHTML</code>, <code>document.write</code>, <code>eval</code>, <code>src</code> de scripts) são bloqueadas a menos que o valor seja um objeto <code>TrustedHTML</code> / <code>TrustedScript</code> criado por uma policy explícita.
+        </li>
+        <li>
+          <strong>Report-Only vs. enforcing:</strong> <code>Content-Security-Policy-Report-Only</code> registra violações sem bloquear — indispensável para testar uma CSP antes de ativar em produção. Use ambos em paralelo: Report-Only para a nova política enquanto a atual está em enforcing.
+        </li>
+        <li>
+          <strong>report-uri vs. report-to:</strong> <code>report-uri /csp-endpoint</code> é legado mas universalmente suportado. <code>report-to</code> usa a Reporting API (grupo definido no header <code>Reporting-Endpoints</code>), suporta batching e outros tipos de relatório. Use ambos durante transição.
+        </li>
+        <li>
+          <strong>Bypasses comuns de allowlists:</strong> JSONP endpoints (<code>https://accounts.google.com/o/oauth2/revoke?callback=alert(1)</code>), Angular no CDN (template injection via ng-src), qualquer host com upload de arquivos na allowlist. Por isso <code>'strict-dynamic'</code> + nonces supera allowlists de host em segurança.
+        </li>
       </ul>
     </div>
     <div id="csp-analogia" class="tab-pane analogy-box">
@@ -543,12 +632,52 @@
     </div>
     <div id="csrf-resumo" class="tab-pane active block-points">
       <ul>
-        <li><strong>Ataque:</strong> força o browser autenticado de uma vítima a enviar requisições involuntárias para outro site.</li>
-        <li><strong>Explora cookies automáticos</strong> — o browser os envia em toda request sem que o JS precise tocá-los.</li>
-        <li><strong>Defesas principais:</strong> CSRF tokens (synchronizer token pattern), Double Submit Cookie, SameSite cookies.</li>
-        <li><strong>SameSite=Strict/Lax</strong> é a mitigação mais moderna — impede o browser de enviar cookies em requisições cross-site.</li>
-        <li><strong>APIs que usam apenas Bearer tokens</strong> (Authorization header) não são vulneráveis a CSRF pois o JS precisa setar explicitamente o header.</li>
-        <li><strong>Verificar Origin/Referer</strong> como defesa complementar mas não suficiente isolada.</li>
+        <li>
+          <strong>Mecanismo exato do ataque:</strong> o browser envia cookies automaticamente em qualquer request para o domínio alvo, independentemente de qual site originou a request. Um formulário em <code>evil.com</code> submetendo para <code>bank.com</code> carrega todos os cookies de <code>bank.com</code> — incluindo o de sessão. O servidor não consegue distinguir de uma ação legítima do usuário sem mecanismos adicionais.
+        </li>
+        <li>
+          <strong>Vetores de ataque:</strong>
+          <ul>
+            <li><strong>GET CSRF:</strong> <code>&lt;img src="https://bank.com/transfer?to=evil&amp;amount=5000"&gt;</code> — GETs nunca devem ter side effects (idempotência HTTP).</li>
+            <li><strong>POST CSRF:</strong> formulário oculto com <code>action="https://bank.com/transfer"</code> + <code>&lt;script&gt;document.forms[0].submit()&lt;/script&gt;</code> auto-submetido.</li>
+            <li><strong>JSON CSRF:</strong> raro mas possível se o servidor aceitar <code>text/plain</code> — <code>&lt;form enctype="text/plain"&gt;</code> pode submeter pseudo-JSON.</li>
+            <li><strong>Login CSRF:</strong> força login com credenciais do atacante — vítima usa a conta do atacante, atacante vê dados que ela insere.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>1. Synchronizer Token Pattern (mais robusto):</strong> servidor gera token aleatório criptograficamente seguro e o armazena na sessão. Token é incluído em cada form/request mutante (header, body ou query). Servidor compara com a sessão usando <strong>comparação em tempo constante</strong> (<code>crypto.timingSafeEqual</code>) para evitar timing attacks. Não é vulnerável a subdomain attacks pois o estado vive no servidor.
+        </li>
+        <li>
+          <strong>2. Double Submit Cookie:</strong> token aleatório em cookie (não-HttpOnly) + header ou campo do form. Servidor verifica que ambos batem — sem estado no servidor. Simples de implementar em SPAs. <strong>Vulnerabilidade:</strong> se atacante controla qualquer subdomínio (via XSS ou subdomain takeover), pode setar cookie para o domínio pai com valor conhecido e forjar o par. Mitigação: usar <code>__Host-</code> prefix no cookie.
+        </li>
+        <li>
+          <strong>3. SameSite Cookie Attribute — os três valores:</strong>
+          <ul>
+            <li><code>Strict</code>: cookie nunca enviado em requests cross-site, incluindo top-level navigations. Mais seguro mas quebra fluxos legítimos como "voltar do OAuth provider" (o provider redireciona de volta ao seu site — cross-site navigation). Sessão parece expirada.</li>
+            <li><code>Lax</code> (padrão em browsers modernos se não especificado): enviado apenas em top-level navigations com GET iniciadas pelo usuário (clicar em link). Bloqueia forms POST, subresources (img, script, XHR). <strong>Não bloqueia</strong> CSRF via link com GET.</li>
+            <li><code>None</code>: enviado sempre, exige obrigatoriamente <code>Secure</code> (HTTPS). Necessário para cookies de terceiros em iframes (ex: widgets de pagamento).</li>
+          </ul>
+        </li>
+        <li>
+          <strong>4. Custom Request Headers como CSRF mitigation:</strong> qualquer header não-simples (ex: <code>X-Requested-With: XMLHttpRequest</code>, <code>Content-Type: application/json</code>) dispara preflight CORS. Sem CORS configurado para a origin do atacante, o preflight falha e a request real não é enviada. Proteção "gratuita" para APIs JSON — mas o servidor <em>deve</em> validar o header, não apenas confiar no preflight.
+        </li>
+        <li>
+          <strong>5. Origin/Referer validation (defesa complementar):</strong> verificar header <code>Origin</code> na requisição — quando presente, indica a origem exata. <code>Referer</code> como fallback (pode ser suprimido por Referrer-Policy). Limitações: <code>Origin</code> pode ser <code>null</code> (iframes sandboxed, <code>file://</code>), e <code>Referer</code> pode ser omitido por proxies ou configurações de privacidade. Nunca usar como única defesa.
+        </li>
+        <li>
+          <strong>Cookie Prefixes — proteção adicional:</strong>
+          <ul>
+            <li><code>__Host-SessionId</code>: exige <code>Secure</code>, <code>Path=/</code>, sem <code>Domain</code> — escopo máximo restrito, impossível de setar por subdomínio.</li>
+            <li><code>__Secure-SessionId</code>: exige apenas <code>Secure</code> — menos restritivo que <code>__Host-</code>.</li>
+            <li>Impede que subdomínios comprometidos sobrescrevam cookies do domínio pai — crítico para Double Submit Cookie.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>APIs com Bearer token (Authorization header) são imunes por design:</strong> o header <code>Authorization</code> não é enviado automaticamente pelo browser — JS deve setá-lo explicitamente via <code>fetch</code>/<code>XHR</code>. Isso é bloqueado pela SOP em contextos cross-origin. CSRF explora apenas o envio automático de cookies — se a autenticação depende 100% de headers customizados, CSRF é inviável.
+        </li>
+        <li>
+          <strong>Defesa em profundidade recomendada:</strong> <code>SameSite=Lax</code> ou <code>Strict</code> + Synchronizer Token Pattern. SameSite mitiga browsers modernos sem estado adicional; tokens cobrem browsers antigos e edge cases. Nunca depender de uma única camada.
+        </li>
       </ul>
     </div>
     <div id="csrf-analogia" class="tab-pane analogy-box">
@@ -604,6 +733,212 @@
 </div>
 </div>
   </div>
+
+  <!-- SECURITY HEADERS -->
+  <div class="card">
+    <h3>Security Headers <span class="badge">HTTP Response Headers</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'sh-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'sh-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'sh-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="sh-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>Strict-Transport-Security (HSTS):</strong> instrui o browser a usar HTTPS exclusivamente por um período definido. Parâmetros críticos:
+          <ul>
+            <li><code>max-age=31536000</code>: 1 ano (mínimo recomendado para preload).</li>
+            <li><code>includeSubDomains</code>: aplica HSTS a todos os subdomínios — cuidado: subdomínio HTTP quebra tudo.</li>
+            <li><code>preload</code>: permite submissão à <a href="https://hstspreload.org" target="_blank" rel="noopener noreferrer" style="color:var(--accent3)">HSTS Preload List</a> — browser hardcode HTTPS sem precisar do header inicial (elimina o ataque SSLstrip no primeiro acesso).</li>
+            <li><strong>Risco de remoção:</strong> remover HSTS exige reduzir <code>max-age</code> para 0 muito antes de qualquer downgrade — browsers ignorarão HTTP pelo tempo restante do max-age.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>X-Content-Type-Options: nosniff:</strong> impede que o browser "adivinhe" o MIME type de um recurso quando o <code>Content-Type</code> está ausente ou errado (MIME sniffing). Sem ele, um arquivo <code>.jpg</code> com conteúdo HTML poderia ser executado como HTML — vetor de XSS via upload de arquivos. Sempre incluir em responses que servem uploads.
+        </li>
+        <li>
+          <strong>X-Frame-Options (legado):</strong> <code>DENY</code> | <code>SAMEORIGIN</code>. Substitua por <code>frame-ancestors</code> no CSP — mais flexível, suporta múltiplas origens. X-Frame-Options só é relevante para browsers sem suporte a CSP.
+        </li>
+        <li>
+          <strong>Referrer-Policy:</strong> controla o que o header <code>Referer</code> envia em requests. Valores recomendados:
+          <ul>
+            <li><code>strict-origin-when-cross-origin</code> (padrão moderno): envia URL completa em same-origin, apenas a origem em cross-origin HTTPS→HTTPS, nada em HTTPS→HTTP.</li>
+            <li><code>no-referrer</code>: nunca envia Referer — máxima privacidade mas quebra analytics e alguns fluxos de auth.</li>
+            <li><code>same-origin</code>: Referer apenas para mesma origem.</li>
+            <li>Evitar <code>unsafe-url</code>: envia URL completa incluindo query string em todos os contextos — vaza parâmetros sensíveis (tokens em URL, dados de formulário).</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Permissions-Policy (antigo Feature-Policy):</strong> controla acesso a APIs do browser pela página e por iframes. Exemplos:
+          <br><code>Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()</code>
+          <br>Desabilita câmera/microfone completamente, geolocation apenas para a própria origem. Crítico para apps que embebem conteúdo de terceiros — previne que iframes acessem periféricos sem consentimento.
+        </li>
+        <li>
+          <strong>Cross-Origin-Opener-Policy (COOP):</strong> isola o browsing context group — evita que uma janela aberta via <code>window.open()</code> mantenha referência à opener. Valor recomendado: <code>same-origin</code>. Necessário para habilitar <code>SharedArrayBuffer</code> (junto com COEP).
+        </li>
+        <li>
+          <strong>Cross-Origin-Embedder-Policy (COEP):</strong> <code>require-corp</code> — exige que todos os subresources (scripts, imagens, iframes) declarem explicitamente <code>Cross-Origin-Resource-Policy</code> ou tenham CORS. COEP + COOP = <strong>cross-origin isolation</strong> — habilita <code>SharedArrayBuffer</code> e timers de alta precisão (necessários para Spectre mitigations).
+        </li>
+        <li>
+          <strong>Cross-Origin-Resource-Policy (CORP):</strong> header de <em>resposta</em> que controla quem pode carregar o recurso. Valores: <code>same-site</code>, <code>same-origin</code>, <code>cross-origin</code>. Complementa COEP — assets de CDN precisam retornar <code>CORP: cross-origin</code> para serem carregados em páginas com COEP.
+        </li>
+        <li>
+          <strong>Cache-Control em respostas autenticadas:</strong> <code>Cache-Control: no-store</code> em respostas com dados sensíveis — impede que proxies, CDNs e o cache do browser armazenem o conteúdo. <code>no-cache</code> ainda armazena mas revalida. Para páginas autenticadas: <code>Cache-Control: no-store, private</code>.
+        </li>
+        <li>
+          <strong>Headers a remover/suprimir:</strong>
+          <ul>
+            <li><code>Server: Apache/2.4.51</code> — vazamento de versão, facilita exploração de CVEs conhecidas. Remova ou ofusque.</li>
+            <li><code>X-Powered-By: Express</code> / <code>PHP/8.1</code> — mesma razão.</li>
+            <li><code>X-AspNet-Version</code>, <code>X-AspNetMvc-Version</code> — remover em ASP.NET.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Verificação rápida:</strong> <a href="https://securityheaders.com" target="_blank" rel="noopener noreferrer" style="color:var(--accent3)">securityheaders.com</a> analisa todos os headers de segurança de uma URL e dá um grade A–F.
+        </li>
+      </ul>
+    </div>
+    <div id="sh-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🛡️</span>
+      Pensa num castelo medieval: HSTS é o fosso (quem tenta entrar por uma porta insegura cai na água), X-Content-Type-Options é o guarda que confere se o que está entrando é mesmo o que parece, Permissions-Policy é a lista de o que cada hóspede pode fazer dentro do castelo, e CORP/COOP são as câmaras separadas — ninguém de fora pode olhar pelas janelas de dentro.
+    </div>
+    <div id="sh-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-sh">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-sh-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-sh')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-sh-q0" data-correct="1" data-expl="O primeiro acesso via HTTP ainda pode ser interceptado (SSLstrip) — o header só é enviado em HTTPS. A Preload List resolve isso: browsers já sabem de antemão que o domínio exige HTTPS, sem precisar do primeiro request HTTP. É a única forma de eliminar completamente o risco do primeiro acesso.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que HSTS com max-age alto ainda é vulnerável no primeiro acesso e como a Preload List resolve isso?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">A) HSTS não funciona em HTTP/1.1 — somente HTTP/2 envia o header corretamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">B) No primeiro acesso via HTTP, o header ainda não chegou ao browser — SSLstrip pode interceptar. A Preload List hardcodeia HTTPS no browser antes do primeiro request</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">C) O atacante pode deletar o HSTS do browser limpando os cookies da vítima</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">D) HSTS só protege subdomínios — o domínio raiz continua vulnerável sem preload</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sh-q1" data-correct="2" data-expl="COEP (require-corp) exige que todos os subresources declarem CORP ou CORS. COOP (same-origin) isola o browsing context. Juntos criam cross-origin isolation — que habilita SharedArrayBuffer e timers de alta precisão, removidos em 2018 após Spectre. Sem os dois, essas APIs ficam indisponíveis por segurança.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Qual combinação de headers habilita SharedArrayBuffer em browsers modernos e por quê foi necessária?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">A) HSTS + X-Content-Type-Options — isolam o contexto de memória compartilhada</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">B) Permissions-Policy: shared-array-buffer=() — libera a API explicitamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">C) Cross-Origin-Opener-Policy: same-origin + Cross-Origin-Embedder-Policy: require-corp — criam cross-origin isolation, necessária após Spectre</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">D) Content-Security-Policy com worker-src self — permite SharedArrayBuffer em workers</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sh-q2" data-correct="0" data-expl="MIME sniffing: sem nosniff, o browser pode executar um arquivo .jpg com conteúdo HTML como HTML. Em plataformas com upload, um atacante faz upload de um arquivo com extensão .jpg mas conteúdo JavaScript/HTML — sem nosniff, pode ser executado. Com nosniff, o browser respeita o Content-Type declarado e recusa executar o tipo errado.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>X-Content-Type-Options: nosniff protege especificamente contra qual vetor de ataque em plataformas com upload de arquivos?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">A) Upload de arquivo com extensão inócua (.jpg) mas conteúdo HTML/JS que seria executado pelo browser via MIME sniffing</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">B) Injeção de headers HTTP via CRLF no nome do arquivo durante upload</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">C) Download forçado de arquivos executáveis disfarçados de imagens</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">D) Cache poisoning via Content-Type incorreto em CDNs</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sh-q3" data-correct="1" data-expl="unsafe-url envia a URL completa incluindo query string e fragmento em todos os contextos. Se a URL contém tokens (ex: /reset-password?token=abc123), referrer headers a expõe para o site de destino e para analytics/logs. strict-origin-when-cross-origin envia apenas a origem em cross-origin — sem path, sem query string.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Por que Referrer-Policy: unsafe-url é perigoso em aplicações que passam tokens em query string?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">A) Permite que sites de terceiros façam CSRF usando o token do Referer</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">B) Envia a URL completa (incluindo token na query string) como Referer para qualquer site linkado — vazando tokens para terceiros e logs de servidor</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">C) Desabilita a proteção HSTS para requests que incluem Referer</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sh')">D) Faz o browser cachear URLs com tokens, expondo-os no histórico compartilhado</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- SUBRESOURCE INTEGRITY -->
+  <div class="card">
+    <h3>Subresource Integrity <span class="badge">SRI</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'sri-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'sri-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'sri-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="sri-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O problema que SRI resolve:</strong> CDNs de terceiros podem ser comprometidos ou sofrer supply chain attacks. Se você carrega <code>&lt;script src="https://cdn.lib.com/jquery.min.js"&gt;</code> sem verificação, uma versão comprometida executa no contexto da sua página com acesso ao DOM, cookies (não-HttpOnly) e localStorage — XSS via CDN.
+        </li>
+        <li>
+          <strong>Como funciona:</strong> o atributo <code>integrity</code> contém o hash esperado do recurso. O browser calcula o hash do arquivo recebido e compara — qualquer diferença bloqueia a execução/aplicação.
+          <br><code>&lt;script src="https://cdn.example.com/lib.js" integrity="sha384-base64hash=" crossorigin="anonymous"&gt;&lt;/script&gt;</code>
+        </li>
+        <li>
+          <strong>Algoritmos suportados:</strong> <code>sha256</code>, <code>sha384</code>, <code>sha512</code>. Recomendado: <code>sha384</code> ou <code>sha512</code>. Pode incluir múltiplos hashes separados por espaço — browser usa o mais forte que suporta.
+          <br>Geração: <code>openssl dgst -sha384 -binary lib.js | openssl base64 -A</code> ou <code>cat lib.js | openssl dgst -sha384 -binary | base64</code>.
+        </li>
+        <li>
+          <strong>crossorigin="anonymous" é obrigatório:</strong> sem ele, o browser não inclui CORS headers na request, e a spec SRI requer que recursos cross-origin sejam servidos com CORS. Sem <code>crossorigin</code>, o SRI falha mesmo com hash correto.
+        </li>
+        <li>
+          <strong>Aplica-se a:</strong> <code>&lt;script&gt;</code> e <code>&lt;link rel="stylesheet"&gt;</code> de origens <em>externas</em>. Não se aplica a recursos same-origin (não precisam — você controla o servidor). Também não se aplica a <code>&lt;img&gt;</code>, <code>&lt;video&gt;</code>, fontes ou Workers diretamente via HTML (use CSP para esses).
+        </li>
+        <li>
+          <strong>SRI + CSP — combinação ideal:</strong> CSP restringe de quais origens scripts podem vir; SRI garante que o conteúdo é exatamente o esperado. Um CDN na allowlist do CSP ainda poderia servir conteúdo adulterado — SRI detecta isso. Juntos eliminam duas classes de ataque.
+        </li>
+        <li>
+          <strong>Limitações:</strong>
+          <ul>
+            <li>Arquivos com conteúdo dinâmico ou versionamento automático quebram SRI — hash muda a cada versão.</li>
+            <li>Não protege contra o CDN servindo um arquivo diferente (com hash diferente) — protege apenas contra adulteração do arquivo específico referenciado.</li>
+            <li>Se o CDN fica indisponível, o recurso não carrega — fallback deve ser considerado.</li>
+            <li>Modules ESM dinâmicos (<code>import()</code>) não suportam SRI diretamente no HTML — use Import Maps para controlar o mapeamento.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Import Maps + SRI:</strong> browsers modernos suportam <code>&lt;script type="importmap"&gt;</code> com <code>integrity</code> por módulo — permite SRI em ESM imports especificando o hash por URL no mapa.
+        </li>
+        <li>
+          <strong>Fallback strategy:</strong> se SRI falha, o browser bloqueia e dispara um <code>error</code> event no elemento. Use <code>onerror</code> para carregar de um mirror alternativo ou mostrar mensagem de erro ao usuário — sem fallback, a feature que depende do script simplesmente para de funcionar silenciosamente.
+        </li>
+      </ul>
+    </div>
+    <div id="sri-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🔏</span>
+      Você pede uma peça importada online. O fabricante imprime um código de verificação na embalagem — você confere se bate com o código no site oficial antes de abrir. Se o pacote foi trocado durante o transporte (CDN comprometido), o código não vai bater e você descarta sem usar. SRI é esse código de verificação — garante que o que chegou é exatamente o que foi pedido.
+    </div>
+    <div id="sri-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-sri">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-sri-pts">0</b> / 3</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-sri')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-sri-q0" data-correct="2" data-expl="crossorigin=anonymous faz o browser incluir o header Origin na request e exigir CORS na resposta. A spec SRI requer que recursos cross-origin sejam servidos via CORS — sem esse atributo, o browser não obtém os headers CORS necessários para validar e o SRI falha, bloqueando o recurso mesmo com hash correto.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que crossorigin=&quot;anonymous&quot; é obrigatório em elementos com atributo integrity cross-origin?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">A) Para evitar que o browser envie cookies junto com o request do CDN</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">B) Para habilitar cache compartilhado entre origens diferentes no browser</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">C) A spec SRI exige CORS para recursos cross-origin — sem crossorigin, o browser não obtém headers CORS e o SRI falha mesmo com hash correto</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">D) Para que o hash seja calculado incluindo os headers HTTP e não apenas o corpo do arquivo</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sri-q1" data-correct="0" data-expl="CSP restringe origens mas não o conteúdo — um CDN na allowlist pode servir malware. SRI verifica que o conteúdo é byte-a-byte idêntico ao hash declarado. CSP sem SRI = confio no CDN sem verificar o que ele serve. SRI sem CSP = verifico o conteúdo mas qualquer CDN novo poderia ser adicionado por XSS. Juntos cobrem os dois vetores.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Um CDN está na allowlist do CSP. Por que SRI ainda é necessário nesse cenário?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">A) CSP garante a origem mas não o conteúdo — o CDN pode ser comprometido e servir malware de uma URL na allowlist. SRI verifica o conteúdo byte-a-byte</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">B) SRI substitui CSP em browsers modernos — CSP foi deprecado para recursos externos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">C) CSP não cobre scripts carregados via &lt;script src&gt; — apenas scripts inline</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">D) SRI é necessário apenas quando o recurso tem Content-Type incorreto</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sri-q2" data-correct="1" data-expl="dynamic import() não suporta SRI diretamente via HTML. Import Maps permitem mapear especificadores de módulo para URLs E declarar hashes de integridade por URL — o browser verifica o hash antes de executar cada módulo importado dinamicamente. É a única forma de aplicar SRI a ESM dinâmico.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Como aplicar SRI a módulos ESM carregados via import() dinâmico?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">A) Adicionar integrity como segundo argumento: import(url, { integrity: &quot;sha384-...&quot; })</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">B) Usar Import Maps com o campo integrity por URL — o browser verifica o hash antes de executar cada módulo mapeado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">C) dynamic import() não suporta SRI — use apenas &lt;script type=module src&gt; para módulos com integridade</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sri')">D) Configurar um Service Worker que intercepta os requests e valida os hashes antes de retornar ao browser</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ 2 ARQUITETURA -->
@@ -2934,10 +3269,27 @@
       </div>
       <div id="ll-resumo" class="tab-pane active block-points">
         <ul>
-          <li>Carrega recursos somente quando necessário — imagens abaixo do fold, rotas não visitadas.</li>
-          <li><strong>Imagens:</strong> atributo <code>loading="lazy"</code> (nativo) ou Intersection Observer API.</li>
-          <li><strong>Rotas:</strong> dynamic <code>import()</code> — <code>React.lazy()</code>, code splitting por rota.</li>
-          <li>Melhora TTI e reduz bytes iniciais; requer Suspense/fallback para UX adequado.</li>
+          <li>
+            <strong>loading="lazy" nativo — como funciona:</strong> o browser adia o download até que a imagem esteja a uma certa distância do viewport (distance-from-viewport threshold — varia por conexão: ~1250px em 4G, ~2500px em 3G no Chrome). É uma hint, não uma garantia — o browser pode ignorar. <strong>Nunca</strong> usar em imagens above the fold, pois atrasa o LCP. Regra: lazy loading apenas em imagens abaixo do fold visível.
+          </li>
+          <li>
+            <strong>width + height obrigatórios para evitar CLS:</strong> sem dimensões explícitas, o browser não reserva espaço e a imagem "empurra" o conteúdo ao carregar (layout shift). <code>&lt;img width="800" height="450"&gt;</code> ou <code>aspect-ratio: 16/9</code> via CSS. O browser calcula o aspect-ratio a partir dos atributos mesmo antes de baixar a imagem.
+          </li>
+          <li>
+            <strong>fetchpriority — priorização explícita:</strong> <code>fetchpriority="high"</code> na imagem LCP instrui o browser a dar prioridade máxima ao download — mais efetivo que apenas remover o <code>loading="lazy"</code>. <code>fetchpriority="low"</code> em imagens decorativas reduz competição com recursos críticos. Disponível desde Chrome 101.
+          </li>
+          <li>
+            <strong>Intersection Observer API — quando usar sobre loading="lazy":</strong> para lazy loading com controle fino — threshold customizado, callbacks ao entrar/sair do viewport, fallback para browsers antigos. Padrão com <code>rootMargin: "200px"</code> para carregar antes de chegar à viewport. <code>loading="lazy"</code> é preferível para imagens simples; IntersectionObserver para carrosséis, infinite scroll, animações ativadas por scroll.
+          </li>
+          <li>
+            <strong>Lazy loading de rotas — React.lazy + Suspense:</strong> <code>const Page = React.lazy(() =&gt; import('./Page'))</code>. O Suspense boundary exibe o fallback enquanto o chunk carrega. <strong>Nunca</strong> lazy-load a rota inicial/home — o usuário vê o fallback desnecessariamente. Pré-carregue chunks adjacentes no <code>onMouseEnter</code> ou <code>onFocus</code> dos links de navegação para eliminar delay percebido.
+          </li>
+          <li>
+            <strong>Lazy loading e LCP — interação crítica:</strong> se a imagem LCP tiver <code>loading="lazy"</code>, o browser a descobrirá tarde (só após o HTML ser parseado e o preload scanner passar pela tag) e o download será adiado — LCP alto garantido. PageSpeed Insights identifica esse padrão como "Defer offscreen images" × "LCP element has lazy loading".
+          </li>
+          <li>
+            <strong>Preload scanner e lazy loading:</strong> o preload scanner do browser (parser HTML especulativo) <em>não</em> descobre imagens lazy porque elas têm <code>src</code> substituído por <code>data-src</code> em implementações JS — o browser precisa executar o JS para descobrir o recurso. <code>loading="lazy"</code> nativo mantém o <code>src</code> real, então o preload scanner ainda encontra a imagem mas com prioridade baixa.
+          </li>
         </ul>
       </div>
       <div id="ll-analogia" class="tab-pane analogy-box">
@@ -2991,10 +3343,36 @@
       </div>
       <div id="cs-resumo" class="tab-pane active block-points">
         <ul>
-          <li>Divide o bundle em chunks menores carregados sob demanda.</li>
-          <li><strong>Estratégias:</strong> por rota, por componente, por vendor (vendor chunk), por feature.</li>
-          <li><strong>Tree Shaking:</strong> remove código não utilizado (dead code) na build.</li>
-          <li>Controle de cache: vendor chunk estável → cache longo; app chunk muda com cada deploy.</li>
+          <li>
+            <strong>O problema que code splitting resolve:</strong> um bundle monolítico de 2MB precisa ser baixado, parseado e compilado antes de qualquer interação — mesmo que o usuário use apenas 20% do código. Code splitting divide o grafo de módulos em chunks menores carregados sob demanda.
+          </li>
+          <li>
+            <strong>Estratégias de splitting:</strong>
+            <ul>
+              <li><strong>Por rota:</strong> o chunk de <code>/checkout</code> só carrega quando o usuário navega para checkout. Mais impactante — corta o initial bundle drasticamente.</li>
+              <li><strong>Por componente:</strong> modais, tabs, drawers pesados — carregam apenas quando abertos.</li>
+              <li><strong>Vendor chunk:</strong> separa <code>node_modules</code> do código da aplicação. Vendor muda apenas quando dependências mudam — cache longo (1 ano) enquanto o app chunk muda a cada deploy.</li>
+              <li><strong>Por feature/módulo:</strong> funcionalidades premium, admin dashboard, editor rico — isolados do caminho crítico.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Tree Shaking — como funciona e quando falha:</strong> bundlers analisam o grafo de importações estáticas ESM e eliminam exports não-referenciados. <strong>Falha quando:</strong> (1) módulo tem side effects — declarar <code>"sideEffects": false</code> no package.json; (2) uso de CommonJS (<code>require()</code>) — estático para bundler; (3) re-exportações de barrels (<code>export * from</code>) importam tudo; (4) dynamic access (<code>obj[key]</code>) impede análise estática.
+          </li>
+          <li>
+            <strong>Content hashing e cache busting:</strong> <code>[name].[contenthash].js</code> — o hash muda apenas quando o conteúdo do chunk muda. Vendor chunk com hash estável → cache de 1 ano no browser. App chunk com hash novo a cada deploy → browser baixa apenas o que mudou. <strong>Build hash</strong> (hash único por build inteira) invalida tudo desnecessariamente — nunca usar para chunks individuais.
+          </li>
+          <li>
+            <strong>Chunk waterfall — o problema e a solução:</strong> rota A importa chunk B que importa chunk C — carregamento em cascata. Solução: <code>/* webpackPrefetch: true */</code> ou <code>/* webpackPreload: true */</code> em dynamic imports. Prefetch injeta <code>&lt;link rel="prefetch"&gt;</code> no idle time; preload com alta prioridade imediata. No Vite: <code>import.meta.glob</code> com <code>eager: false</code> + prefetch manual.
+          </li>
+          <li>
+            <strong>Tamanho mínimo de chunk:</strong> chunks muito pequenos (&lt;10-20kb) têm overhead de round-trip que supera o benefício. Webpack: <code>optimization.splitChunks.minSize: 20000</code>. Muitos chunks pequenos em HTTP/1.1 é catastrófico; em HTTP/2 é aceitável mas ainda há overhead de frame e header por request.
+          </li>
+          <li>
+            <strong>Análise de bundle:</strong> <code>webpack-bundle-analyzer</code>, <code>rollup-plugin-visualizer</code>, <code>source-map-explorer</code>. Identifica duplicatas (mesma lib em múltiplos chunks), dependências inesperadas (moment.js com todos os locales), chunks desproporcionais. Imprescindível antes de otimizar — você não pode melhorar o que não mede.
+          </li>
+          <li>
+            <strong>Module Federation (Webpack 5):</strong> compartilha módulos entre aplicações distintas em runtime — sem duplicação do React/Vue no MFE host e nos remotes. Chunk carregado do remote é cacheado e reusado por todos os MFEs da página.
+          </li>
         </ul>
       </div>
       <div id="cs-analogia" class="tab-pane analogy-box">
@@ -3048,11 +3426,39 @@
       </div>
       <div id="gz-resumo" class="tab-pane active block-points">
         <ul>
-          <li>Compressão de transferência HTTP — reduz bytes na rede, não no disco.</li>
-          <li>Browser anuncia suporte via <code>Accept-Encoding: gzip, br</code>; servidor responde com <code>Content-Encoding: gzip</code>.</li>
-          <li><strong>Brotli (br):</strong> 20-30% melhor que gzip para texto; suporte moderno universal.</li>
-          <li>Compressão dinâmica (por request) vs. estática (pré-comprimida no CI — melhor para assets grandes).</li>
-          <li>Não comprima imagens JPEG/PNG/WebP — já são binários comprimidos; overhead negativo.</li>
+          <li>
+            <strong>Negociação de conteúdo — o fluxo completo:</strong> browser envia <code>Accept-Encoding: gzip, deflate, br</code>. Servidor escolhe o melhor formato suportado e responde com <code>Content-Encoding: br</code> (ou <code>gzip</code>). O browser descomprime de forma transparente. <strong>Obrigatório:</strong> <code>Vary: Accept-Encoding</code> na resposta para que CDNs armazenem versões separadas por encoding — sem isso, um browser sem suporte a Brotli pode receber a versão Brotli do cache.
+          </li>
+          <li>
+            <strong>Gzip — fundamentos:</strong> baseado em DEFLATE (LZ77 + Huffman). Nível 1–9: nível 6 é o padrão (equilíbrio CPU/compressão). Nível 9 comprime ~5% mais mas usa 10× mais CPU — raramente vale para compressão dinâmica. Redução típica: JS/CSS/HTML → 60–80% menor.
+          </li>
+          <li>
+            <strong>Brotli — por que é melhor:</strong> usa dicionário estático de 120k+ tokens comuns da web (HTML tags, CSS props, JS keywords), dicionário dinâmico e contexto de modelagem. Nível 11 (máximo): 20–26% melhor que gzip. Nível 4–6: similar ao gzip nível 9 com menor CPU. <strong>Limitação:</strong> Brotli nível 11 é lento demais para compressão dinâmica (até 10× mais lento que gzip nível 6) — use apenas para assets pré-comprimidos no CI/build.
+          </li>
+          <li>
+            <strong>Compressão dinâmica vs. estática:</strong>
+            <ul>
+              <li><strong>Dinâmica:</strong> servidor comprime cada request em tempo real. Adequado para respostas de API JSON (conteúdo muda por request). Use nível Brotli 4–6 ou gzip 5–6.</li>
+              <li><strong>Estática (pré-comprimida):</strong> build gera <code>main.js</code>, <code>main.js.gz</code> e <code>main.js.br</code>. Servidor serve o arquivo pré-comprimido sem CPU adicional por request. Brotli nível 11 é viável. Nginx: <code>gzip_static on</code>; Vite/Webpack: plugins de compressão no build.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>O que comprimir e o que não comprimir:</strong>
+            <ul>
+              <li><strong>Comprimir:</strong> JS, CSS, HTML, JSON, XML, SVG, fontes WOFF (WOFF2 já é comprimido internamente mas ainda comprime um pouco), texto plano.</li>
+              <li><strong>Não comprimir:</strong> JPEG, PNG, WebP, AVIF, GIF, WOFF2, ZIP, PDF, vídeos — já são formatos comprimidos. Tentar comprimir aumenta o tamanho ou desperdiça CPU sem ganho.</li>
+              <li><strong>Threshold mínimo:</strong> payloads abaixo de 1KB — o overhead dos headers <code>Content-Encoding</code> + CPU supera o ganho. Configure <code>gzip_min_length 1024</code> no Nginx.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>HTTP/2 HPACK e HTTP/3 QPACK:</strong> compressão de <em>headers</em> HTTP (não do body). HPACK (HTTP/2) usa tabela de headers indexados — headers repetidos entre requests são enviados como índices de 1 byte. QPACK (HTTP/3/QUIC) resolve o problema de head-of-line blocking do HPACK em streams multiplexados. Distinto da compressão de body — operam em camadas diferentes.
+          </li>
+          <li>
+            <strong>Ataque BREACH — compressão como oráculo:</strong> se um secret (CSRF token, JWT) é refletido em uma resposta comprimida, a compressão revela informação: payload comprimido fica menor quando contém strings repetidas. Atacante envia requests com diferentes prefixos do token e mede o tamanho — deduz o token byte a byte. Mitigação: adicionar padding aleatório à resposta, desabilitar compressão para endpoints que refletem secrets, usar SameSite cookies (remove a necessidade de CSRF token no body).
+          </li>
+          <li>
+            <strong>zstd (Zstandard):</strong> algoritmo mais recente do Facebook — velocidade de gzip com compressão de Brotli. Chrome 123+ suporta via <code>Accept-Encoding: zstd</code>. Suporte de servidor crescente — próximo candidato a padrão para compressão dinâmica.
+          </li>
         </ul>
       </div>
       <div id="gz-analogia" class="tab-pane analogy-box">
@@ -3106,11 +3512,78 @@
       </div>
       <div id="cwv-resumo" class="tab-pane active block-points">
         <ul>
-          <li><strong>LCP (Largest Contentful Paint):</strong> &lt;2.5s — velocidade de carregamento do maior elemento visível.</li>
-          <li><strong>INP (Interaction to Next Paint):</strong> &lt;200ms — responsividade a interações do usuário (substituiu FID em 2024).</li>
-          <li><strong>CLS (Cumulative Layout Shift):</strong> &lt;0.1 — estabilidade visual — elementos que pulam durante carregamento.</li>
-          <li>Fator de rankeamento Google Search desde 2021.</li>
-          <li><strong>Ferramentas:</strong> Lighthouse, Chrome DevTools, CrUX (dados reais), PageSpeed Insights.</li>
+          <li>
+            <strong>O que são Core Web Vitals e por que importam para SEO:</strong> métricas definidas pelo Google para quantificar experiência do usuário. Desde 2021 são sinal de rankeamento no Google Search (Page Experience Signal). O impacto no ranking é menor que a relevância de conteúdo, mas desempata posições concorrentes. Avaliados no <strong>75º percentil</strong> dos dados de campo (CrUX) — se 25% dos usuários têm experiência ruim, a página falha no threshold.
+          </li>
+          <li>
+            <strong>LCP — Largest Contentful Paint:</strong>
+            <ul>
+              <li><strong>O que mede:</strong> tempo até o maior elemento de conteúdo visível no viewport inicial ser renderizado. Elementos candidatos: <code>&lt;img&gt;</code>, <code>&lt;image&gt;</code> dentro de SVG, <code>&lt;video&gt;</code> com poster, elemento com background-image via CSS, e blocos de texto (<code>&lt;p&gt;</code>, <code>&lt;h1-6&gt;</code>).</li>
+              <li><strong>Thresholds:</strong> ≤2.5s = Bom; 2.5s–4.0s = Precisa melhorar; &gt;4.0s = Ruim.</li>
+              <li><strong>Causas comuns de LCP alto e diagnóstico:</strong>
+                <ul>
+                  <li>TTFB alto → problema no servidor/CDN. Fix: CDN mais próximo, cache do HTML, otimizar TTFB do servidor.</li>
+                  <li>Render-blocking resources (CSS/JS no head) → atrasa início da renderização. Fix: defer/async em scripts, inline CSS crítico, preload do CSS principal.</li>
+                  <li>Recurso LCP descoberto tarde → preload scanner não encontra. Fix: <code>&lt;link rel="preload" as="image"&gt;</code> + <code>fetchpriority="high"</code> na imagem LCP.</li>
+                  <li>Recurso LCP grande sem otimização → download lento. Fix: WebP/AVIF, compressão, srcset com tamanho adequado.</li>
+                  <li><code>loading="lazy"</code> na imagem LCP → download adiado. Remover imediatamente.</li>
+                </ul>
+              </li>
+              <li><strong>LCP sub-parts (Chrome 112+):</strong> Time to First Byte + Resource Load Delay + Resource Load Time + Element Render Delay. Identificar qual sub-parte é dominante guia a otimização correta.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>INP — Interaction to Next Paint (substituiu FID em março/2024):</strong>
+            <ul>
+              <li><strong>O que mede:</strong> latência de ponta-a-ponta de interações — desde o evento do usuário (click, keydown, pointerdown) até o próximo frame pintado que reflete a resposta visual. Considera <em>todas</em> as interações da sessão, reporta o pior caso (com exclusão de outliers).</li>
+              <li><strong>Por que INP supera FID:</strong> FID media apenas o input delay do <em>primeiro</em> input e ignorava o tempo de renderização pós-handler. INP mede input delay + processing time + presentation delay de todas as interações — muito mais representativo da responsividade percebida.</li>
+              <li><strong>Thresholds:</strong> ≤200ms = Bom; 200ms–500ms = Precisa melhorar; &gt;500ms = Ruim.</li>
+              <li><strong>Fases do INP e como otimizar cada uma:</strong>
+                <ul>
+                  <li><strong>Input delay:</strong> causado por long tasks bloqueando o main thread no momento do input. Fix: quebrar long tasks com <code>scheduler.yield()</code>, <code>setTimeout(fn, 0)</code> ou <code>MessageChannel</code>.</li>
+                  <li><strong>Processing time:</strong> tempo do event handler. Fix: adiar trabalho não-crítico para depois do frame, usar <code>startTransition()</code> no React para marcar updates como não-urgentes.</li>
+                  <li><strong>Presentation delay:</strong> tempo do browser para renderizar o frame após o handler. Fix: evitar layouts forçados síncronos, minimizar DOM mutations, usar compositor-only properties.</li>
+                </ul>
+              </li>
+              <li><strong>Ferramentas de diagnóstico:</strong> Chrome DevTools Performance panel (Interactions track), PerformanceObserver com <code>type: 'event'</code>, web-vitals.js library.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>CLS — Cumulative Layout Shift:</strong>
+            <ul>
+              <li><strong>O que mede:</strong> soma de todos os layout shifts inesperados durante a vida da página. Score individual = impact fraction × distance fraction. Agrupa shifts em session windows (janelas de 5s com gaps de 1s) — reporta o pior session window.</li>
+              <li><strong>Thresholds:</strong> ≤0.1 = Bom; 0.1–0.25 = Precisa melhorar; &gt;0.25 = Ruim.</li>
+              <li><strong>Causas e fixes:</strong>
+                <ul>
+                  <li>Imagens sem dimensões → reservar espaço com <code>width/height</code> ou <code>aspect-ratio</code>.</li>
+                  <li>Anúncios/embeds sem dimensões reservadas → container com altura mínima fixa.</li>
+                  <li>Fontes web (FOUT) → <code>font-display: swap</code> + <code>size-adjust</code>/<code>ascent-override</code> na fallback font para ajuste métrico.</li>
+                  <li>Conteúdo injetado dinamicamente acima do fold (banners, notificações) → inserir apenas abaixo do conteúdo existente ou usar espaço reservado.</li>
+                  <li>Animações que disparam layout (top, left, width) → usar <code>transform: translate()</code> (compositor-only, não causa layout shift para CLS).</li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Field data vs. Lab data — diferença crítica:</strong>
+            <ul>
+              <li><strong>Lab data (Lighthouse, WebPageTest):</strong> condições controladas e simuladas — dispositivo específico, throttling fixo, rede emulada. Determinístico e reproduzível. Ideal para diagnóstico e CI. Não reflete a distribuição real de dispositivos e redes dos seus usuários.</li>
+              <li><strong>Field data (CrUX, RUM):</strong> dados reais coletados do Chrome de usuários reais. O Google usa CrUX para rankings de busca. Agrupado no 75º percentil por URL (ou por origem quando há poucos dados). Insubstituível para validar se a otimização impactou usuários reais.</li>
+              <li><strong>CrUX (Chrome User Experience Report):</strong> dataset público de ~20M de origens. Atualizado mensalmente. Acessível via PageSpeed Insights, Search Console (Core Web Vitals report), BigQuery e CrUX API.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Ferramentas do ecossistema:</strong>
+            <ul>
+              <li><strong>PageSpeed Insights:</strong> combina Lighthouse (lab) + CrUX (field) na mesma interface.</li>
+              <li><strong>Search Console — Core Web Vitals report:</strong> agrupa URLs por status (Bom/Ruim) com dados de 28 dias. Identifica grupos de URLs problemáticas.</li>
+              <li><strong>web-vitals.js:</strong> biblioteca oficial do Google para medir CWV em RUM — usa PerformanceObserver e retorna o valor de 75º percentil correto.</li>
+              <li><strong>Chrome DevTools:</strong> Performance panel mostra LCP, INP e CLS com detalhes de sub-parts. Lighthouse tab para lab data. Performance Insights para análise guiada.</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Métricas complementares (não CWV mas diagnóstico):</strong> TTFB (&lt;800ms bom), FCP (First Contentful Paint, &lt;1.8s bom), TTI (Time to Interactive — depreciado em Lighthouse 10), TBT (Total Blocking Time — proxy lab para INP).
+          </li>
         </ul>
       </div>
       <div id="cwv-analogia" class="tab-pane analogy-box">
@@ -3165,6 +3638,593 @@
 </div>
     </div>
   </div>
+
+  <!-- RESOURCE HINTS -->
+  <div class="card">
+    <h3>Resource Hints &amp; Priorização <span class="badge">preload · prefetch · preconnect</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'rh-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'rh-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'rh-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="rh-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>dns-prefetch:</strong> resolve o DNS de uma origem antes de ser necessária. Baixo custo (~1–5ms de CPU). Útil para origens de terceiros (analytics, fontes, CDN de imagens).
+          <br><code>&lt;link rel="dns-prefetch" href="https://fonts.googleapis.com"&gt;</code>
+        </li>
+        <li>
+          <strong>preconnect:</strong> realiza DNS + TCP handshake + TLS handshake para uma origem antecipadamente. Econimiza 100–500ms por origem. Use para origens críticas (CDN principal, API endpoint, servidor de fontes). Limitar a 1–2 origens — cada preconnect consome sockets e CPU.
+          <br><code>&lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;</code>
+          <br><strong>crossorigin obrigatório</strong> para origens que servirão recursos com CORS (fontes, scripts).
+        </li>
+        <li>
+          <strong>preload — alta prioridade, uso atual:</strong> instrui o browser a baixar o recurso imediatamente com a prioridade adequada ao tipo. Não executa — apenas baixa. Obrigatório especificar <code>as</code> para prioridade correta e cache correto.
+          <br><code>&lt;link rel="preload" href="/hero.webp" as="image" fetchpriority="high"&gt;</code>
+          <br><code>&lt;link rel="preload" href="/font.woff2" as="font" crossorigin&gt;</code>
+          <br><strong>Casos de uso:</strong> imagem LCP, fonte crítica acima do fold, script de terceiro bloqueante, CSS crítico carregado via JS.
+          <br><strong>Atenção:</strong> preload de recurso não usado na página gera warning no DevTools e desperdiça bandwidth. Cada preload competes por bandwidth com o HTML/CSS crítico.
+        </li>
+        <li>
+          <strong>prefetch — baixa prioridade, uso futuro:</strong> baixa recurso durante tempo ocioso para uso na próxima navegação. Prioridade Lowest — não compete com recursos críticos da página atual.
+          <br><code>&lt;link rel="prefetch" href="/pagina-seguinte.js" as="script"&gt;</code>
+          <br>Útil para: próxima rota em um fluxo linear (ex: etapa 1 → 2 → 3 de checkout), resultado mais provável de uma busca.
+        </li>
+        <li>
+          <strong>fetchpriority (Priority Hints):</strong> ajusta a prioridade de fetch dentro da categoria do recurso. Valores: <code>high</code>, <code>low</code>, <code>auto</code> (padrão).
+          <ul>
+            <li><code>fetchpriority="high"</code> na imagem LCP: instrui o browser a tratá-la como recurso crítico mesmo sem preload explícito.</li>
+            <li><code>fetchpriority="low"</code> em imagens de carrossel ou decorativas: libera largura de banda para recursos mais importantes.</li>
+            <li><code>fetchpriority="low"</code> em scripts third-party não-críticos: evita que scripts de analytics compitam com o bundle principal.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>modulepreload:</strong> preload específico para ES modules — baixa, analisa e compila o módulo antecipadamente (preload normal só baixa).
+          <br><code>&lt;link rel="modulepreload" href="/app.js"&gt;</code>
+          <br>Essencial em apps ESM sem bundler ou com importmaps — elimina o tempo de parse/compile na execução.
+        </li>
+        <li>
+          <strong>Especulative Rules API (Chrome 109+):</strong> especulação de navegação mais agressiva que prefetch.
+          <br><code>&lt;script type="speculationrules"&gt;{"prefetch": [{"urls": ["/next-page"]}]}&lt;/script&gt;</code>
+          <br><code>prerender</code>: renderiza completamente a próxima página em background — navegação instantânea. Usar apenas quando a probabilidade de navegação é muito alta (&gt;80%) e a página é leve (sem side effects pesados).
+        </li>
+        <li>
+          <strong>Ordem de prioridade do browser (Chromium):</strong> HTML &gt; CSS critical &gt; Fonts (preload) &gt; Scripts (parser-blocking) &gt; Scripts (async/defer) &gt; Images (in-viewport) &gt; Images (off-viewport) &gt; prefetch. Preload eleva a prioridade; fetchpriority="low" rebaixa.
+        </li>
+      </ul>
+    </div>
+    <div id="rh-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🚦</span>
+      Preconnect é ligar para o restaurante antes de sair de casa para reservar mesa. Preload é pedir o prato antes de chegar — ele já está saindo da cozinha. Prefetch é pedir a sobremesa logo depois de sentar — cozinha prepara enquanto você almoça. fetchpriority=high é dizer ao garçom "isso aqui é urgente" — ele interrompe outras ordens para atender primeiro.
+    </div>
+    <div id="rh-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-rh">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-rh-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-rh')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-rh-q0" data-correct="1" data-expl="preload baixa o recurso mas não o executa — o tipo as= define a prioridade e o destino do cache. Sem as=, o browser usa prioridade genérica (baixa) e o recurso pode não estar disponível no momento certo. Com as=image, o browser trata com prioridade de imagem e armazena no image cache correto.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que o atributo as= é obrigatório em &lt;link rel="preload"&gt;?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">A) Para definir o Content-Type enviado na requisição do recurso preloaded</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">B) Para o browser aplicar a prioridade correta e armazenar no cache do tipo certo — sem as=, usa prioridade genérica baixa e pode não servir do cache quando necessário</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">C) Para compatibilidade com HTTP/1.1 — HTTP/2 não requer o atributo as</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">D) Para ativar o preload scanner do browser que é desabilitado sem o atributo</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-rh-q1" data-correct="2" data-expl="preconnect faz DNS + TCP + TLS — economiza 100–500ms por origem. dns-prefetch só faz DNS — útil quando preconnect seria caro (muitas conexões). crossorigin é necessário em preconnect para origens que servirão recursos CORS (fontes), pois conexões CORS e non-CORS são pools separados.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Qual a diferença entre preconnect e dns-prefetch, e quando usar cada um?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">A) preconnect é para origens HTTP; dns-prefetch para HTTPS</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">B) Ambos são equivalentes — dns-prefetch é legado e preconnect o substitui completamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">C) preconnect realiza DNS + TCP + TLS (economiza ~300ms); dns-prefetch apenas resolve DNS (~5ms). Use preconnect para origens críticas e dns-prefetch para origens menos prioritárias ou quando há muitas origens</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">D) dns-prefetch é mais eficiente porque economiza o overhead do TLS handshake</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-rh-q2" data-correct="0" data-expl="fetchpriority=high na imagem LCP eleva sua prioridade no queue de fetch do browser — ela compete igualmente com scripts e CSS críticos. O browser a baixa mais cedo no processo de carregamento, reduzindo o Resource Load Delay e o Resource Load Time sub-parts do LCP. Preload + fetchpriority=high é a combinação mais eficaz para imagens LCP.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Como fetchpriority="high" na imagem LCP reduz o LCP especificamente?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">A) Eleva a prioridade de download da imagem no queue de fetch, reduzindo o Resource Load Delay e Resource Load Time — sub-parts do LCP</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">B) Instrui o browser a renderizar a imagem antes de terminar de parsear o HTML</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">C) Faz o browser pré-decodificar a imagem em uma thread separada</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">D) Desabilita o lazy loading da imagem automaticamente</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-rh-q3" data-correct="1" data-expl="modulepreload baixa, analisa o módulo E o pré-compila — preload normal apenas baixa. Para ESM, parse e compilação podem levar dezenas a centenas de ms para arquivos grandes. modulepreload move esse custo para antes da execução, tornando a execução do módulo instantânea quando necessário.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Qual a vantagem de modulepreload sobre preload as="script" para ES modules?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">A) modulepreload suporta HTTP/2 push; preload as=script apenas HTTP/1.1</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">B) modulepreload baixa, analisa E pré-compila o módulo — eliminando parse/compile time na execução; preload as=script apenas baixa o arquivo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">C) modulepreload executa o módulo imediatamente; preload apenas coloca em cache</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-rh')">D) Ambos são equivalentes para módulos — a diferença é apenas no Content-Type da requisição</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT PERFORMANCE -->
+  <div class="card">
+    <h3>JavaScript Performance <span class="badge">Parse · Long Tasks · Main Thread</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'jsp-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'jsp-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'jsp-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="jsp-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>Custo do JavaScript — 4 fases:</strong>
+          <ul>
+            <li><strong>Download:</strong> bytes na rede. Mitigação: code splitting, compressão, cache.</li>
+            <li><strong>Parse:</strong> texto JS → AST. CPU-bound. 1MB de JS pode levar 1–4s em mobile de médio porte. Mitigação: reduzir bytes enviados, usar code splitting.</li>
+            <li><strong>Compile:</strong> AST → bytecode (Ignition no V8) + JIT compilation (Turbofan). V8 usa lazy compilation — funções não chamadas não são compiladas imediatamente. Mitigação: evitar grandes arquivos JS monolíticos.</li>
+            <li><strong>Execute:</strong> execução do código. Long tasks bloqueiam o main thread. Mitigação: break up long tasks, Web Workers para CPU-bound work.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Long Tasks — definição e impacto:</strong> qualquer tarefa que ocupa o main thread por mais de 50ms é uma Long Task (definição da spec). Durante uma Long Task, o browser não pode processar inputs, pintar frames ou executar callbacks de animação — UI congelada. Long Tasks são o principal contribuidor para INP alto e TBT (Total Blocking Time) alto.
+        </li>
+        <li>
+          <strong>Quebrando Long Tasks — técnicas:</strong>
+          <ul>
+            <li><code>setTimeout(fn, 0)</code>: agenda continuação no próximo macrotask — libera o main thread entre chunks de trabalho. Não garante ordem relativa a outros macrotasks.</li>
+            <li><code>scheduler.yield()</code> (Chrome 115+): pausa a tarefa atual e retoma na próxima oportunidade — mais eficiente que setTimeout pois retoma imediatamente após o browser processar inputs pendentes.</li>
+            <li><code>MessageChannel.postMessage()</code>: alternativa cross-browser ao scheduler.yield com latência mínima.</li>
+            <li><code>requestIdleCallback()</code>: executa trabalho apenas quando o browser está ocioso — adequado para tarefas não-urgentes (analytics, prefetch). Não disponível no Safari estável.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Web Workers — quando e como usar:</strong> executam JS em thread separada sem acesso ao DOM. Ideais para: processamento de dados (parse de CSV/JSON grande, cálculos matemáticos), compressão/descompressão, image processing com OffscreenCanvas, algoritmos de busca/filtragem em datasets grandes. Comunicação via <code>postMessage()</code> — dados são copiados (estruturalmente clonados) ou transferidos (Transferable objects: ArrayBuffer, ImageBitmap).
+        </li>
+        <li>
+          <strong>React — startTransition e useDeferredValue:</strong> marcam updates como não-urgentes, permitindo que o browser interrompa e priorize inputs do usuário. <code>startTransition(() =&gt; setState(...))</code>: atualização pode ser interrompida. <code>useDeferredValue(value)</code>: mantém o valor anterior até o browser ter tempo de processar o novo. Reduz INP em UIs com muita re-renderização.
+        </li>
+        <li>
+          <strong>Optimizações V8 — escrevendo JS que o JIT ama:</strong>
+          <ul>
+            <li><strong>Monomorphic functions:</strong> chamar uma função sempre com os mesmos tipos de argumento — V8 cria Hidden Classes e Inline Caches otimizadas. Passar tipos diferentes em chamadas diferentes = polymorphic/megamorphic = deoptimização.</li>
+            <li><strong>Object shape consistency:</strong> sempre criar objetos com as mesmas propriedades na mesma ordem. Adicionar propriedades dinamicamente depois quebra a Hidden Class e a IC.</li>
+            <li><strong>Evitar delete de propriedades:</strong> deleta a Hidden Class e força o objeto para slow properties (HashMap interno).</li>
+            <li><strong>Typed Arrays:</strong> <code>Float64Array</code>, <code>Int32Array</code> — operações matemáticas em loops são JIT-compiladas para instruções SIMD quando possível.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>requestAnimationFrame — animações no timing certo:</strong> callback executa antes do próximo frame de pintura (normalmente 16.67ms em 60fps). Use para animações que precisam de sincronização com o ciclo de rendering. <strong>Nunca</strong> usar <code>setInterval</code> para animações — não sincroniza com o VSync, causa jank.
+        </li>
+        <li>
+          <strong>Métricas de diagnóstico:</strong>
+          <ul>
+            <li><strong>TBT (Total Blocking Time):</strong> soma de (duracao_long_task - 50ms) para todas as long tasks entre FCP e TTI. Correlaciona fortemente com INP em lab data. Reduzir TBT → reduzir INP.</li>
+            <li><strong>PerformanceObserver longtask:</strong> <code>new PerformanceObserver(cb).observe({type: 'longtask'})</code> — monitora long tasks em produção via RUM.</li>
+            <li><strong>Chrome DevTools — Performance panel:</strong> identifica long tasks (marcadas em vermelho), mostra call stack de cada frame, event loop timeline, forced layout events.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div id="jsp-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🏗️</span>
+      O main thread é um pedreiro que faz tudo: recebe pedidos (inputs), constrói a parede (renderização) e carrega materiais (executa JS). Uma Long Task é o pedreiro carregando 500 tijolos de uma vez — enquanto está carregando, ninguém consegue pedir nada e a parede fica parada. Quebrar a tarefa em partes de 50 tijolos permite que ele pause, receba novos pedidos e continue — a obra avança e o cliente está satisfeito.
+    </div>
+    <div id="jsp-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-jsp">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-jsp-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-jsp')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-jsp-q0" data-correct="1" data-expl="Parse de JS converte texto em AST — é CPU-bound e proporcional ao tamanho do arquivo, não ao que é usado. 1MB de JS parsed em um Pixel 4a leva ~3s mesmo que só 10% seja executado. Code splitting reduz os bytes parseados na inicialização — o maior alavanca além de simplesmente enviar menos JS.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que o custo de parse de JavaScript é proporcional ao tamanho do arquivo e não ao código executado?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">A) O V8 executa todo o código na primeira passagem antes de aplicar lazy compilation</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">B) Parse converte o arquivo texto inteiro em AST independentemente de quais funções serão chamadas — mesmo código não-executado precisa ser parseado para o compilador entender o escopo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">C) O browser não tem como saber qual código será executado sem rodar o programa completo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">D) Parse é executado em uma thread separada e não impacta o main thread</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jsp-q1" data-correct="2" data-expl="scheduler.yield() pausa a task atual e a retoma imediatamente após o browser processar inputs e renders pendentes — latência mínima, alta prioridade de retomada. setTimeout(fn,0) agenda no próximo macrotask mas pode ser atrasado por outros macrotasks enfileirados (mínimo de 4ms em browsers modernos). yield() é mais preciso e eficiente para quebrar long tasks mantendo boa INP.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Qual a vantagem de scheduler.yield() sobre setTimeout(fn, 0) para quebrar Long Tasks?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">A) scheduler.yield() funciona em Web Workers; setTimeout não</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">B) setTimeout garante execução em exatamente 0ms; yield() pode ter delay variável</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">C) scheduler.yield() retoma imediatamente após o browser processar inputs pendentes com mínima latência; setTimeout(fn,0) pode ser atrasado por outros macrotasks (mínimo 4ms)</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">D) Ambos são equivalentes — scheduler.yield() é apenas um alias moderno</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jsp-q2" data-correct="0" data-expl="Transferable objects (ArrayBuffer, MessagePort, ImageBitmap) são transferidos para o Worker com custo O(1) — sem cópia, o buffer original fica inacessível na thread original (neutered). Estrutural clone é O(n) — copia os dados. Para grandes datasets, usar ArrayBuffer + transfer evita o custo de serialização/cópia que tornaria a comunicação com Worker ineficiente.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Por que usar Transferable objects (ArrayBuffer) ao invés de dados normais em postMessage() para Web Workers?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">A) Transferable objects são movidos para o Worker em O(1) sem cópia — o buffer original fica inacessível. Dados normais são copiados em O(n) via structured clone, tornando-se proibitivo para grandes volumes</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">B) Workers só aceitam ArrayBuffer — outros tipos de dado geram erro</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">C) Transferable objects comprimem os dados automaticamente na transferência</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">D) Apenas Transferable objects permitem o Worker acessar o DOM da thread principal</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jsp-q3" data-correct="1" data-expl="TBT soma o excedente de 50ms de cada Long Task entre FCP e TTI — se uma task dura 200ms, contribui 150ms ao TBT. TBT correlaciona fortemente com INP em lab data e é a principal métrica de lab para predizer responsividade. Reduzir TBT quebrando long tasks é a estratégia principal para melhorar INP.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Como TBT (Total Blocking Time) se relaciona com INP e por que é útil em lab data?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">A) TBT mede o mesmo que INP — são métricas equivalentes em contextos diferentes</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">B) TBT soma o excedente de 50ms de cada Long Task entre FCP e TTI — correlaciona fortemente com INP alto. Como INP requer interações reais, TBT serve como proxy mensurável em lab para predizer responsividade</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">C) TBT é a versão legada do INP — foi substituído em 2024</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jsp')">D) TBT mede apenas scripts third-party; INP mede todo o JavaScript da página</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- SERVICE WORKER -->
+  <div class="card">
+    <h3>Service Worker <span class="badge">Proxy · Cache · Offline · Background</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'sw-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'sw-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'sw-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="sw-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O que é um Service Worker:</strong> script JavaScript que o browser registra em uma thread separada (sem acesso ao DOM, sem <code>window</code>, sem <code>localStorage</code>). Atua como um <strong>proxy de rede programável</strong> entre a aplicação e a rede — intercepta todos os requests <code>fetch</code> feitos pela página. Contexto de execução: <code>ServiceWorkerGlobalScope</code>. Funciona apenas em HTTPS (exceto <code>localhost</code>).
+        </li>
+        <li>
+          <strong>Ciclo de vida — 5 estados:</strong>
+          <ul>
+            <li><strong>parsed:</strong> o arquivo SW foi baixado e parseado com sucesso.</li>
+            <li><strong>installing:</strong> evento <code>install</code> dispara. Momento certo para pré-cachear assets críticos via <code>Cache API</code>. Se o evento falhar (Promise rejeitada), o SW volta a <em>redundant</em>.</li>
+            <li><strong>installed / waiting:</strong> SW instalado com sucesso mas aguardando — há outro SW ativo controlando páginas abertas. O SW novo fica em "waiting" até todas as abas do SW antigo fecharem.</li>
+            <li><strong>activating:</strong> evento <code>activate</code> dispara. Momento certo para limpar caches antigos e chamar <code>clients.claim()</code>.</li>
+            <li><strong>activated:</strong> SW controla as páginas. Intercepta <code>fetch</code>, <code>push</code>, <code>sync</code> events.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>skipWaiting() + clients.claim():</strong> <code>self.skipWaiting()</code> no evento <code>install</code> força o SW a pular o estado waiting e ativar imediatamente, sem esperar as abas antigas fecharem. <code>clients.claim()</code> no <code>activate</code> faz o SW assumir o controle de todas as páginas abertas que estão dentro do seu escopo — sem isso, o SW só controla navegações futuras.
+          <br><strong>Atenção:</strong> <code>skipWaiting()</code> pode causar inconsistências se o SW novo usa um formato de cache diferente enquanto a página aberta foi carregada pelo SW antigo.
+        </li>
+        <li>
+          <strong>Estratégias de cache (Workbox patterns):</strong>
+          <ul>
+            <li><strong>Cache First:</strong> serve do cache; busca na rede apenas se não encontrar. Ideal para assets com hash (JS, CSS, imagens imutáveis). Performance máxima, zero latência percebida.</li>
+            <li><strong>Network First:</strong> tenta a rede; em falha, serve o cache. Ideal para <code>index.html</code> e respostas de API que precisam ser frescas. Offline funciona com dado possivelmente stale.</li>
+            <li><strong>Stale-While-Revalidate (SWR):</strong> serve do cache imediatamente (sem latência), atualiza o cache em background buscando da rede. Equilíbrio entre performance e freshness. Ideal para assets que mudam mas não criticamente (fontes, avatares, dados de configuração).</li>
+            <li><strong>Cache Only:</strong> serve exclusivamente do cache — nunca vai à rede. Para app shells completamente offline.</li>
+            <li><strong>Network Only:</strong> nunca usa cache — sempre vai à rede. Para requests não-cacheáveis (analytics, POST de dados sensíveis).</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Cache API — controle programático:</strong> <code>caches.open('v1')</code>, <code>cache.put(request, response)</code>, <code>cache.match(request)</code>, <code>caches.delete('v0')</code>. Diferente do HTTP cache do browser — controlado inteiramente pelo SW. Persistente entre sessões. Não tem limite fixo mas o browser pode evict em pressão de storage (não evict se <code>navigator.storage.persist()</code> for chamado).
+        </li>
+        <li>
+          <strong>index.html — estratégia crítica:</strong> usar <strong>Network First</strong> ou <strong>SWR com revalidação agressiva</strong> — nunca Cache First. index.html referencia assets por hash; se o HTML fica stale, o usuário carrega assets antigos de um deploy anterior. Configurar <code>Cache-Control: no-cache</code> no servidor + Network First no SW = HTML sempre fresco, assets cacheados pelo hash.
+        </li>
+        <li>
+          <strong>Background Sync:</strong> adia operações de rede para quando a conexão for restaurada. O SW registra um sync event via <code>registration.sync.register('send-form')</code>. Mesmo que a aba feche, o browser dispara o evento <code>sync</code> no SW quando a conexão voltar. <strong>Retry:</strong> o SW deve lançar exceção no sync handler para que o browser reagende — uma resposta 500 não lança exceção por padrão.
+        </li>
+        <li>
+          <strong>Push Notifications:</strong> servidor envia mensagem push via Web Push Protocol (usando VAPID keys) → browser acorda o SW (mesmo sem a aba aberta) → SW recebe o evento <code>push</code> → exibe notificação via <code>self.registration.showNotification()</code>. Requer permissão explícita do usuário (<code>Notification.requestPermission()</code>).
+        </li>
+        <li>
+          <strong>Escopo (scope):</strong> o SW controla apenas URLs dentro do seu escopo. Um SW em <code>/app/sw.js</code> controla apenas URLs que começam com <code>/app/</code>. Para controlar a origem inteira, o arquivo deve estar na raiz (<code>/sw.js</code>). O header <code>Service-Worker-Allowed: /</code> pode expandir o escopo além do diretório do arquivo SW.
+        </li>
+        <li>
+          <strong>Workbox (Google):</strong> biblioteca oficial que abstrai as estratégias de cache, precaching, routing e background sync. <code>workbox.routing.registerRoute()</code>, <code>workbox.strategies.StaleWhileRevalidate()</code>. Gera automaticamente o precache manifest no build (Vite plugin, Webpack plugin). Reduz drasticamente o boilerplate de SW para PWAs de produção.
+        </li>
+        <li>
+          <strong>Debugging:</strong> Chrome DevTools → Application → Service Workers. Permite inspecionar o estado atual, forçar update, bypass network (test offline), ver cache storage. <code>chrome://serviceworker-internals</code> para visão global de todos os SWs registrados no browser.
+        </li>
+      </ul>
+    </div>
+    <div id="sw-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🧑‍✈️</span>
+      O Service Worker é um co-piloto que fica entre o avião (sua app) e o controle de voo (a rede). Ele decide: "esse pedido de rota eu já tenho no meu mapa (cache) — vou responder direto sem chamar o controle". Ou: "não tenho esse dado, chamo o controle de voo mas já guardo a resposta pra próxima vez". Se a rede cair, ele serve o mapa que tem — o avião não cai, voa com informações possivelmente um pouco desatualizadas.
+    </div>
+    <div id="sw-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-sw">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-sw-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-sw')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-sw-q0" data-correct="2" data-expl="O ciclo de vida exige que o SW antigo libere o controle antes do novo ativar — garante que a página e o SW sejam compatíveis (mesmo build). skipWaiting() força a transição ignorando essa garantia; clients.claim() assume controle imediato das páginas abertas. Risco: a página foi carregada pelo SW antigo mas o novo SW com cache diferente assume — potencial inconsistência de versão.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que o estado "waiting" existe no ciclo de vida do SW e qual o risco de contorná-lo com skipWaiting()?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">A) Waiting existe para o browser validar a assinatura do SW antes de ativar</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">B) É um delay obrigatório de 60s definido pela spec para segurança</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">C) Garante que página e SW sejam do mesmo build — skipWaiting() pode criar inconsistência de versão entre página (carregada pelo SW antigo) e SW novo com cache diferente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">D) Aguarda o usuário fechar e reabrir a aba para garantir que o DOM seja resetado</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sw-q1" data-correct="1" data-expl="index.html referencia assets pelo hash do build. Cache First em index.html serve o HTML antigo indefinidamente — o usuário usa assets do build anterior mesmo após deploy. Network First garante que o HTML seja sempre fresco (com os novos hashes). Assets com hash no nome podem ser Cache First com TTL longo pois o hash muda a cada build.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Por que usar Cache First para index.html em uma SPA é perigoso após um deploy?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">A) Cache First consome mais memória para HTML do que para assets estáticos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">B) index.html referencia assets por hash — servir o HTML antigo do cache após deploy faz o usuário carregar o bundle do build anterior, nunca vendo as mudanças</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">C) O browser ignora o SW para index.html por segurança</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">D) Cache First não suporta responses com Content-Type: text/html</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sw-q2" data-correct="0" data-expl="SWR serve o cache imediatamente (zero latência percebida) e dispara um fetch em background para atualizar o cache para a próxima visita. O usuário pode ver dados levemente stale na visita atual, mas a próxima visita já terá o conteúdo atualizado. Ideal para conteúdo que muda mas não de forma crítica — fontes, configurações, dados de UI.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual o comportamento exato da estratégia Stale-While-Revalidate no Service Worker?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">A) Serve o cache imediatamente, busca a rede em background para atualizar o cache — o usuário vê dados potencialmente stale na visita atual mas a próxima visita terá o conteúdo atualizado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">B) Serve o cache e aguarda a resposta da rede — quando chega, atualiza a página em tempo real via evento</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">C) Verifica se o cache está stale antes de servir — se sim, busca da rede antes de responder</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">D) Serve do cache apenas se a rede falhar — equivale a Network First com fallback</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sw-q3" data-correct="1" data-expl="Background Sync retry depende do SW lançar exceção no sync handler. Se o fetch retorna 500 e você não checa response.ok, a Promise resolve normalmente — o browser considera o sync bem-sucedido e não reagenda. Você deve: if (!response.ok) throw new Error('server error') — isso faz o browser reagendar o sync com backoff exponencial.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Background Sync não retenta automaticamente quando o servidor retorna 500. Por quê e como corrigir?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">A) Background Sync só retenta em erros de rede (offline) — erros HTTP são considerados sucesso pela spec</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">B) fetch() com resposta 500 resolve a Promise (não rejeita) — o browser considera o sync concluído. Para retry, verificar response.ok e lançar exceção manualmente força o browser a reagendar o sync</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">C) Retenta automaticamente 3 vezes — para mais tentativas configurar maxRetries na registration</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sw')">D) Background Sync é cancelado permanentemente após qualquer erro HTTP — use Periodic Background Sync para retry</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- STREAMS API -->
+  <div class="card">
+    <h3>Streams API <span class="badge">ReadableStream · WritableStream · Transform</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'stm-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'stm-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'stm-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="stm-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O problema que Streams resolve:</strong> processar dados grandes (vídeo, arquivos, respostas de API longas) sem esperar o download completo. Sem streams, você espera o JSON inteiro antes de parsear; com streams, processa chunk a chunk enquanto os bytes chegam — menor uso de memória, menor latência percebida.
+        </li>
+        <li>
+          <strong>ReadableStream — consumindo dados:</strong> representa uma fonte de dados que pode ser lida progressivamente.
+          <ul>
+            <li><strong>Fonte push:</strong> dados chegam sem solicitação — WebSocket, eventos SSE, câmera. A fonte chama o controller para enfileirar chunks.</li>
+            <li><strong>Fonte pull:</strong> dados são solicitados sob demanda — arquivo, resposta HTTP. A fonte espera o consumidor pedir o próximo chunk.</li>
+            <li><strong>Leitura por reader:</strong> <code>stream.getReader()</code> → <code>reader.read()</code> retorna <code>Promise&lt;{value, done}&gt;</code>. Um stream só pode ter um reader por vez (locked).</li>
+            <li><strong>Leitura com async iteration:</strong> <code>for await (const chunk of stream)</code> — a forma mais ergonômica.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>WritableStream — produzindo dados:</strong> destino que aceita chunks escritos progressivamente. <code>stream.getWriter()</code> → <code>writer.write(chunk)</code> → <code>writer.close()</code>. Usado para: salvar arquivo progressivamente, enviar dados para um WebSocket, compressão on-the-fly.
+        </li>
+        <li>
+          <strong>TransformStream — transformando em pipeline:</strong> tem um <code>ReadableStream</code> (saída) e um <code>WritableStream</code> (entrada). Transforma chunks à medida que passam. Exemplos: compressão (<code>CompressionStream</code>), decompressão (<code>DecompressionStream</code>), TextDecoder (bytes → string), parsing incremental.
+          <br><code>const { readable, writable } = new TransformStream({transform(chunk, controller) { controller.enqueue(process(chunk)); }})</code>
+        </li>
+        <li>
+          <strong>Pipe chains — composição de streams:</strong> <code>readable.pipeThrough(transform).pipeTo(writable)</code>. Cada estágio processa chunks à medida que chegam — pipeline declarativo e lazy. O backpressure é propagado automaticamente ao longo da cadeia.
+          <br>Exemplo: <code>response.body.pipeThrough(new DecompressionStream('gzip')).pipeThrough(new TextDecoderStream()).pipeTo(writableStream)</code>
+        </li>
+        <li>
+          <strong>Backpressure — controle de fluxo:</strong> mecanismo que sinaliza ao produtor para desacelerar quando o consumidor não consegue processar na mesma velocidade. Cada stream tem uma <strong>internal queue</strong> com <strong>high water mark</strong> (HWM) — quando a fila está cheia, o produtor recebe sinal de espera via a Promise retornada pelo <code>write()</code>. Sem backpressure, o produtor encheria a memória.
+        </li>
+        <li>
+          <strong>Fetch API + Streams:</strong> <code>response.body</code> é um <code>ReadableStream</code>. Permite processar a resposta progressivamente sem esperar o <code>response.json()</code> ou <code>response.text()</code> completo.
+          <br><code>const reader = response.body.getReader(); while (true) { const {value, done} = await reader.read(); if (done) break; processChunk(value); }</code>
+          <br>Fundamental para: progress bars de download, streaming de respostas LLM (ChatGPT-style token streaming), vídeos sem buffer completo.
+        </li>
+        <li>
+          <strong>Streaming de respostas LLM (Server-Sent Events vs. Streams):</strong>
+          <ul>
+            <li><strong>SSE (EventSource):</strong> server envia <code>data: token\n\n</code> progressivamente. Browser reconecta automaticamente. Simple, mas apenas GET, apenas texto.</li>
+            <li><strong>Fetch + ReadableStream:</strong> POST com streaming de resposta — mais flexível, suporta qualquer método, permite cancelamento via <code>AbortController</code>. Usado pelo ChatGPT e a maioria das APIs LLM modernas.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>CompressionStream / DecompressionStream:</strong> streams nativas para gzip e deflate-raw (Chrome 80+, Firefox 113+). Zero dependência externa para compressão no browser.
+          <br><code>const cs = new CompressionStream('gzip'); file.stream().pipeThrough(cs).pipeTo(dest)</code>
+        </li>
+        <li>
+          <strong>Streams no Service Worker:</strong> o fetch event handler pode retornar um <code>ReadableStream</code> como response — permite streaming de respostas sintéticas construídas a partir de múltiplas fontes (cache + rede) sem esperar tudo pronto. Fundamental para streaming SSR com App Shell.
+        </li>
+        <li>
+          <strong>BYOB (Bring Your Own Buffer):</strong> <code>ReadableStreamBYOBReader</code> — o consumidor fornece o buffer de destino, evitando cópias de memória intermediárias. Zero-copy para operações de alta performance com binários (WebCodecs, WebAssembly, FileSystem API).
+        </li>
+        <li>
+          <strong>Streams vs. alternativas:</strong>
+          <ul>
+            <li><strong>Blob/ArrayBuffer:</strong> carrega tudo em memória antes de processar — simples mas caro para dados grandes.</li>
+            <li><strong>FileReader:</strong> legado, callback-based, sem composição. Substitua por <code>File.stream()</code>.</li>
+            <li><strong>XMLHttpRequest com progress:</strong> dá progresso mas não acesso incremental ao corpo. Streams é superior em todos os aspectos exceto suporte legado.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div id="stm-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🚿</span>
+      Streams são como um cano d'água, não um balde. Com um balde (ArrayBuffer), você espera encher completamente antes de usar qualquer gota. Com um cano, a água flui continuamente — você começa a usar enquanto ainda está chegando. O backpressure é a válvula: se sua pia não drena rápido o suficiente, a pressão diminui automaticamente para não transbordar.
+    </div>
+    <div id="stm-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-stm">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-stm-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-stm')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-stm-q0" data-correct="1" data-expl="Backpressure é o mecanismo de controle de fluxo das Streams API. Quando a internal queue do WritableStream está cheia (acima do high water mark), a Promise retornada por writer.write() fica pendente — sinaliza ao produtor para pausar. Sem backpressure, o produtor continuaria enfileirando chunks indefinidamente, esgotando a memória (o balde transbordaria).">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>O que é backpressure na Streams API e por que é fundamental para uso de memória?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">A) É o mecanismo de retry quando um chunk falha durante o processamento do stream</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">B) Sinaliza ao produtor para desacelerar quando a internal queue está cheia — sem isso, o produtor encheria a memória indefinidamente com chunks não-processados</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">C) É a pressão de rede que determina a velocidade máxima de download de um ReadableStream</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">D) Mecanismo de compressão automática aplicado quando o stream excede o high water mark</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-stm-q1" data-correct="2" data-expl="response.body é um ReadableStream. Lendo com reader.read() em loop, você processa cada chunk de bytes à medida que chega — sem esperar o response inteiro. Isso permite exibir tokens parciais de um LLM, mostrar progresso de download de arquivo grande ou iniciar o parse de JSON streaming antes do fim do response, reduzindo a latência percebida.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Como usar Fetch API + ReadableStream para exibir tokens de resposta de uma API LLM progressivamente?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">A) Usar response.json() que automaticamente processa o stream progressivamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">B) Usar WebSocket em vez de fetch — fetch não suporta streaming de respostas</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">C) Acessar response.body como ReadableStream e chamar reader.read() em loop — cada iteração retorna um chunk de bytes à medida que chega, sem aguardar o response completo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">D) Usar response.body.pipeTo() que decodifica automaticamente o JSON parcial de cada chunk</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-stm-q2" data-correct="0" data-expl="pipeThrough() conecta um ReadableStream a um TransformStream — saída do readable entra no writable do transform, saída do readable do transform está disponível para o próximo estágio. pipeTo() é o passo final que conecta ao WritableStream destino. O pipeline é lazy e propaga backpressure automaticamente de ponta a ponta.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual é a diferença entre pipeThrough() e pipeTo() na composição de stream pipelines?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">A) pipeThrough() conecta a um TransformStream e retorna o ReadableStream de saída — permite encadear transformações; pipeTo() conecta ao WritableStream final e retorna Promise que resolve quando o stream fecha</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">B) pipeThrough() é para streams de texto; pipeTo() é para streams binários</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">C) Ambos são equivalentes — pipeThrough() é o nome antigo de pipeTo()</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">D) pipeTo() suporta backpressure; pipeThrough() não</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-stm-q3" data-correct="1" data-expl="BYOB (Bring Your Own Buffer) permite que o consumidor forneça o ArrayBuffer de destino — o stream escreve diretamente nele sem criar buffers intermediários (zero-copy). Essencial para alta performance com dados binários grandes: WebCodecs decodificando vídeo, WebAssembly processando buffers, FileSystem API lendo arquivos. O overhead de cópia em streams normais é inaceitável nesses contextos.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Quando usar ReadableStreamBYOBReader em vez do reader padrão?</span></p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">A) Sempre que o stream for de texto — BYOB é mais eficiente para TextDecoderStream</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">B) Para dados binários de alta performance (WebCodecs, WebAssembly) onde evitar cópias de buffer é crítico — BYOB permite zero-copy escrevendo diretamente no buffer do consumidor</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">C) Quando o stream tem mais de 1MB de dados — BYOB ativa compressão automática</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-stm')">D) Para streams que precisam de multiple readers simultâneos — BYOB remove o lock do reader padrão</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- ZONE.JS / ZONELESS -->
+  <div class="card">
+    <h3>Zone.js &amp; Zoneless Angular <span class="badge">Change Detection · Signals · Performance</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'zone-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'zone-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'zone-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="zone-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O que é Zone.js:</strong> biblioteca que faz monkey-patching de todas as APIs assíncronas do browser — <code>setTimeout</code>, <code>setInterval</code>, <code>Promise</code>, <code>fetch</code>, <code>addEventListener</code>, <code>requestAnimationFrame</code>, <code>MutationObserver</code> e mais de 60 APIs. Ao interceptar essas chamadas, Zone.js sabe <em>quando</em> uma operação assíncrona começa e termina, permitindo que o Angular saiba quando rodar a detecção de mudanças (<code>ApplicationRef.tick()</code>).
+        </li>
+        <li>
+          <strong>Como o Angular usa Zone.js:</strong> o Angular roda a aplicação dentro de uma <code>NgZone</code>. Quando qualquer operação assíncrona dentro da NgZone completa (Promise resolve, setTimeout dispara, evento DOM ocorre), Zone.js notifica o Angular → Angular chama <code>ApplicationRef.tick()</code> → executa Change Detection em <strong>toda a árvore de componentes</strong> de cima para baixo (estratégia <code>Default</code>). Simples mas custoso: qualquer evento dispara a verificação de todos os componentes.
+        </li>
+        <li>
+          <strong>Custo de performance do Zone.js:</strong>
+          <ul>
+            <li><strong>Bundle size:</strong> ~35–50KB minificado+gzip — carregado em toda aplicação Angular independentemente de uso.</li>
+            <li><strong>Monkey-patching overhead:</strong> cada chamada a APIs assíncronas passa por wrappers do Zone.js — overhead de execução em cada tick.</li>
+            <li><strong>Change Detection global:</strong> com <code>ChangeDetectionStrategy.Default</code>, um evento de mouse move verifica todos os componentes da árvore — O(n) onde n = número de componentes. Em apps grandes, isso é centenas de verificações por evento.</li>
+            <li><strong>Third-party libraries:</strong> qualquer biblioteca que usa <code>setTimeout</code> ou <code>Promise</code> dispara change detection desnecessariamente.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>ChangeDetectionStrategy.OnPush — mitigação parcial com Zone.js:</strong> o componente só é verificado quando: (1) um <code>@Input()</code> muda de referência; (2) um evento DOM ocorre dentro do componente; (3) um Observable/async pipe emite; (4) <code>ChangeDetectorRef.markForCheck()</code> é chamado manualmente. Reduz drasticamente verificações desnecessárias mas ainda depende do Zone.js para disparo inicial e ainda exige disciplina de imutabilidade nos Inputs.
+        </li>
+        <li>
+          <strong>Signals — o modelo reativo do Angular (v16+):</strong> primitiva de reatividade fina que rastreia dependências de forma granular, sem precisar do Zone.js.
+          <ul>
+            <li><code>signal(value)</code>: cria um signal writable. <code>signal.set(newValue)</code>, <code>signal.update(fn)</code>.</li>
+            <li><code>computed(() =&gt; expr)</code>: derivado automaticamente — só recalcula quando suas dependências mudam. Lazy e memoizado.</li>
+            <li><code>effect(() =&gt; ...)</code>: side effect reativo — executa quando qualquer signal lido dentro dele muda.</li>
+            <li><strong>Granularidade:</strong> signals notificam apenas os componentes e computed values que dependem deles — não a árvore inteira.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Zoneless Angular (v18+ estável, v19 padrão):</strong> aplicação Angular sem Zone.js. Habilitado via:
+          <br><code>bootstrapApplication(AppComponent, { providers: [provideExperimentalZonelessChangeDetection()] })</code>
+          <br>E removendo <code>zone.js</code> do <code>polyfills</code> em <code>angular.json</code>.
+          <br><strong>Como o Change Detection funciona sem Zone.js:</strong> o Angular usa um <strong>scheduler interno</strong> baseado em <code>queueMicrotask</code> / <code>Promise</code>. Change detection é disparada apenas quando:
+          <ul>
+            <li>Um <code>signal</code> lido por um componente muda.</li>
+            <li><code>ChangeDetectorRef.markForCheck()</code> é chamado.</li>
+            <li><code>AsyncPipe</code> emite um novo valor.</li>
+            <li>Um event listener do Angular (template binding) dispara.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Ganhos do Zoneless:</strong>
+          <ul>
+            <li>Remove ~35–50KB do bundle (Zone.js).</li>
+            <li>Elimina overhead de monkey-patching em todas as APIs async.</li>
+            <li>Change detection só ocorre quando há mudança real de estado — O(1) por signal em vez de O(n) global.</li>
+            <li>Compatível com <strong>SSR</strong> e <strong>SSG</strong> sem as complexidades do Zone.js no servidor.</li>
+            <li>Melhor integração com Web Workers — operações assíncronas em Workers não disparam change detection desnecessária.</li>
+            <li>Tempo de startup mais rápido — sem o bootstrap overhead do Zone.js.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Migração para Zoneless — estratégia incremental:</strong>
+          <ol style="padding-left:1.2rem;margin-top:.4rem">
+            <li>Habilitar <code>provideExperimentalZonelessChangeDetection()</code> mantendo Zone.js — modo híbrido para identificar componentes que dependem de Zone.js.</li>
+            <li>Converter componentes para <code>ChangeDetectionStrategy.OnPush</code> e signals.</li>
+            <li>Substituir <code>setTimeout</code>/<code>setInterval</code> manuais por signals ou <code>rxjs</code> com <code>async</code> pipe.</li>
+            <li>Verificar third-party libs que dependem de Zone.js — algumas usam <code>NgZone.run()</code> internamente.</li>
+            <li>Remover <code>zone.js</code> do <code>polyfills</code> e testar.</li>
+          </ol>
+        </li>
+        <li>
+          <strong>runOutsideAngular — otimização manual com Zone.js:</strong> para operações que não devem disparar change detection (animações performáticas, scroll listeners, WebSocket updates de alta frequência):
+          <br><code>this.ngZone.runOutsideAngular(() =&gt; { window.addEventListener('scroll', handler); })</code>
+          <br>Quando precisar atualizar o DOM com resultado: <code>this.ngZone.run(() =&gt; this.data.set(newValue))</code>.
+        </li>
+        <li>
+          <strong>Comparativo React vs. Angular no modelo de reatividade:</strong>
+          <ul>
+            <li><strong>React:</strong> sem equivalente ao Zone.js — change detection manual via <code>setState</code>/<code>dispatch</code>. Renderização baseada em Virtual DOM diff. Signals via <code>useSignal</code> ainda experimental (React 19).</li>
+            <li><strong>Angular Zoneless + Signals:</strong> reatividade fina sem Virtual DOM — atualiza o DOM real diretamente apenas nos nós que dependem do signal alterado. Conceitualmente mais próximo do SolidJS.</li>
+            <li><strong>SolidJS:</strong> sem VDOM, sem Zone.js, com signals desde o início — Angular Zoneless converge para esse modelo.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div id="zone-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🔔</span>
+      Zone.js é como um zelador que, toda vez que qualquer campainha do prédio toca — entrega, interfone, alarme de incêndio, campainha do vizinho — percorre todos os apartamentos batendo na porta perguntando "você precisa de algo?". Signals + Zoneless é como cada apartamento ter seu próprio sistema: a campainha do seu pedido toca <em>só na sua porta</em>. O zelador (Zone.js) some, cada morador se vira com seu próprio alarme granular.
+    </div>
+    <div id="zone-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-zone">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-zone-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-zone')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-zone-q0" data-correct="1" data-expl="Zone.js faz monkey-patching de APIs assíncronas para interceptar quando operações completam. Quando qualquer async op dentro da NgZone termina, o Angular dispara ApplicationRef.tick() que executa change detection em toda a árvore de componentes — O(n). Uma requisição fetch de analytics, um setTimeout de uma lib de terceiros, ou um interval de um slider triggering CD global desnecessária.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que uma biblioteca de terceiros que usa setTimeout internamente pode causar problemas de performance em Angular com Zone.js?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">A) Bibliotecas de terceiros bloqueiam o event loop do Angular impedindo o Change Detection de rodar</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">B) Zone.js intercepta o setTimeout da lib — quando dispara, aciona Change Detection global em toda a árvore mesmo que nenhum dado da aplicação tenha mudado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">C) Bibliotecas que usam setTimeout causam memory leaks pois Zone.js não consegue rastreá-las</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">D) setTimeout de terceiros bypassa a NgZone e causa inconsistências de estado</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-zone-q1" data-correct="2" data-expl="computed() é lazy e memoizado — só recalcula quando uma de suas dependências (signals lidas dentro dele) muda, e apenas quando é lido. Se nenhum consumidor lê o computed, ele não recalcula mesmo que as dependências mudem. Diferente de derived state com observables que executa independentemente de haver consumidores.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Qual é o comportamento de computed() em Angular Signals quando suas dependências mudam mas nenhum componente lê o valor?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">A) O computed recalcula imediatamente e armazena o novo valor no cache</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">B) O computed dispara change detection nos componentes que já o leram anteriormente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">C) O computed marca-se como dirty mas NÃO recalcula — é lazy, só executa quando um consumidor o lê, economizando CPU em derivações não-utilizadas</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">D) O computed lança uma exceção por dependência sem consumidor ativo</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-zone-q2" data-correct="0" data-expl="runOutsideAngular executa o código fora da NgZone — Zone.js ainda intercepta as APIs mas não notifica o Angular quando completam. Ideal para scroll handlers, animações de alta frequência, WebSockets com muitas mensagens. Quando o resultado precisa atualizar o DOM, chame ngZone.run(() => ...) para re-entrar na zone e disparar change detection só então.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual o propósito de ngZone.runOutsideAngular() e quando usá-lo?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">A) Executar código assíncrono fora da NgZone para que completions não disparem Change Detection — ideal para scroll handlers, animações e WebSockets de alta frequência</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">B) Rodar código em uma Web Worker thread separada do Angular</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">C) Desabilitar Zone.js globalmente para um bloco de código específico</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">D) Executar change detection manualmente sem aguardar o próximo tick do Zone.js</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-zone-q3" data-correct="1" data-expl="Zoneless dispara Change Detection apenas quando um signal dependente muda — O(1) por componente afetado, não O(n) global. Isso elimina verificações desnecessárias em componentes não-relacionados. Combinado com a remoção dos ~35-50KB do Zone.js e sem overhead de monkey-patching, o ganho de performance é substancial especialmente em apps grandes com muitos componentes.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Qual o principal ganho de performance do Angular Zoneless + Signals em comparação com Zone.js + Default CD?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">A) Zoneless elimina o Virtual DOM — Angular passa a manipular o DOM real diretamente como React</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">B) Change Detection torna-se O(1) por componente afetado (apenas quem depende do signal alterado) em vez de O(n) global — mais remoção do bundle Zone.js (~35–50KB) e zero overhead de monkey-patching</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">C) Zoneless permite SSR sem Node.js — renderiza diretamente no edge</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-zone')">D) Signals substituem completamente o RxJS — eliminando toda a complexidade de observables</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ 10 CALL STACK -->
@@ -5008,6 +6068,590 @@
   </div>
 </div>
 </div>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════ 14 WEB COMPONENTS & MFE -->
+<section id="wc">
+  <div class="section-header">
+    <div class="section-num">14</div>
+    <h2>Web Components &amp; Micro-frontends</h2>
+  </div>
+
+  <!-- O QUE SÃO WEB COMPONENTS -->
+  <div class="card">
+    <h3>O que são Web Components <span class="badge">Visão Geral · 4 APIs · Ecossistema</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'wco-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'wco-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'wco-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="wco-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>Definição:</strong> Web Components é um conjunto de <strong>4 APIs nativas do browser</strong> que juntas permitem criar elementos HTML reutilizáveis, encapsulados e interoperáveis — sem depender de nenhum framework. São um padrão W3C/WHATWG, parte da especificação HTML Living Standard e suportados nativamente em Chrome, Firefox, Safari e Edge.
+        </li>
+        <li>
+          <strong>As 4 APIs que compõem Web Components:</strong>
+          <ul>
+            <li>
+              <strong>1. Custom Elements:</strong> define novos elementos HTML com comportamento próprio via JavaScript. <code>customElements.define('my-card', MyCard)</code> → <code>&lt;my-card&gt;</code> passa a existir como elemento de primeira classe no DOM, com lifecycle hooks e reatividade a atributos.
+            </li>
+            <li>
+              <strong>2. Shadow DOM:</strong> sub-árvore DOM isolada que encapsula markup, estilos e lógica interna do componente. CSS interno não vaza para fora; CSS global não penetra sem convite (CSS variables atravessam). O mesmo mecanismo que o browser usa internamente para <code>&lt;input type="date"&gt;</code>, <code>&lt;video&gt;</code> e <code>&lt;details&gt;</code>.
+            </li>
+            <li>
+              <strong>3. HTML Templates (<code>&lt;template&gt;</code> e <code>&lt;slot&gt;</code>):</strong> <code>&lt;template&gt;</code> define markup inerte — não renderizado, sem download de recursos, sem execução de scripts — que pode ser clonado e instanciado quantas vezes precisar. <code>&lt;slot&gt;</code> define pontos de projeção de conteúdo externo dentro do shadow DOM.
+            </li>
+            <li>
+              <strong>4. ES Modules:</strong> sistema de módulos nativo do JavaScript (<code>import/export</code>) que permite distribuir e importar componentes sem bundler. Web Components são naturalmente distribuídos como módulos ES — você importa um arquivo JS e o custom element fica disponível.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Por que Web Components existem — o problema que resolvem:</strong> antes de Web Components, cada framework criava seus próprios componentes encapsulados de formas incompatíveis entre si. Um componente React não pode ser usado diretamente em Angular, e vice-versa. Web Components são a camada de interoperabilidade universal: um componente criado uma vez funciona em qualquer framework ou em HTML puro — sem adaptadores, sem wrappers, sem re-implementação.
+        </li>
+        <li>
+          <strong>Linha do tempo e adoção:</strong>
+          <ul>
+            <li><strong>2011:</strong> Alex Russell (Google) apresenta o conceito de Web Components na Fronteers Conference.</li>
+            <li><strong>2013:</strong> Google lança Polymer — primeira biblioteca sobre Web Components v0.</li>
+            <li><strong>2016–2018:</strong> Web Components v1 (Custom Elements v1 + Shadow DOM v1) — a especificação atual — implementada no Chrome e Safari.</li>
+            <li><strong>2018:</strong> Firefox e Edge (EdgeHTML) adicionam suporte. Web Components v1 se torna baseline.</li>
+            <li><strong>2019:</strong> Google lança Lit (ex-LitElement) como substituto moderno do Polymer.</li>
+            <li><strong>2023:</strong> Declarative Shadow DOM se torna padrão — resolve SSR. Baseline 2024 para todas as 4 APIs.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Como as 4 APIs se complementam na prática:</strong>
+          <pre style="background:var(--surface2);padding:.8rem;border-radius:8px;font-size:.8rem;overflow-x:auto;margin-top:.4rem"><code>// 1. Template (markup inerte)
+&lt;template id="card-tpl"&gt;
+  &lt;style&gt; :host { display: block } &lt;/style&gt;  /* 2. Shadow DOM CSS */
+  &lt;div class="card"&gt;&lt;slot name="title"&gt;&lt;/slot&gt;&lt;/div&gt;  /* slot */
+&lt;/template&gt;
+
+// 3. Custom Element + 2. Shadow DOM
+class MyCard extends HTMLElement {         /* Custom Element */
+  constructor() {
+    super();
+    const shadow = this.attachShadow({ mode: 'open' }); /* Shadow DOM */
+    const tmpl = document.getElementById('card-tpl');
+    shadow.appendChild(tmpl.content.cloneNode(true));   /* Template */
+  }
+}
+customElements.define('my-card', MyCard);
+
+// 4. ES Module — distribuição
+export { MyCard };  // import { MyCard } from './my-card.js'</code></pre>
+        </li>
+        <li>
+          <strong>Web Components vs. frameworks — onde cada um brilha:</strong>
+          <ul>
+            <li><strong>Use Web Components quando:</strong> o componente precisa ser usado em múltiplos frameworks ou em HTML puro; você está construindo um design system cross-org; o componente tem vida útil longa e não quer apostar em um framework específico; você quer zero dependências de runtime.</li>
+            <li><strong>Use frameworks quando:</strong> você tem uma stack única; precisa de SSR sofisticado; data fetching, routing e state management fazem parte do escopo; a DX e o ecossistema importam mais que a portabilidade.</li>
+            <li><strong>Use junto:</strong> frameworks modernos (Angular, Vue, Svelte) compilam para ou integram com Web Components. React 19 tem suporte nativo. A escolha não é exclusiva.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Ecossistema atual:</strong>
+          <ul>
+            <li><strong>Lit (Google):</strong> ~5KB, a biblioteca de referência — abstrai boilerplate de Custom Elements com decorators e templates reativos.</li>
+            <li><strong>Stencil (Ionic):</strong> compilador que gera Web Components nativos a partir de uma sintaxe similar ao React/JSX. Focado em design systems com saída para múltiplos formatos.</li>
+            <li><strong>FAST (Microsoft):</strong> biblioteca de Web Components usada no Fluent UI e Microsoft Edge. Performática para listas grandes.</li>
+            <li><strong>Shoelace / Spectrum / Fluent / Carbon:</strong> design systems implementados como Web Components — prontos para consumo em qualquer framework.</li>
+            <li><strong>webcomponents.org:</strong> catálogo comunitário de componentes publicados como Custom Elements.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Suporte atual (Baseline 2024):</strong> todas as 4 APIs estão disponíveis nos últimos 2 anos de Chrome, Firefox, Safari e Edge. Polyfills não são mais necessários para apps com targeting de browsers modernos. Customized built-in elements (<code>is=""</code>) ainda requerem polyfill no Safari.
+        </li>
+      </ul>
+    </div>
+    <div id="wco-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🔌</span>
+      Pensa na tomada elétrica: o padrão da tomada (Web Components) é definido pelo governo (W3C). Qualquer fabricante (Google, Microsoft, Meta, comunidade) pode criar aparelhos (componentes) que encaixam nessa tomada — sem precisar de um adaptador de marca específica. O React tem sua própria tomada proprietária, o Angular tem a dele. Web Components é a tomada universal que funciona em qualquer lugar. As 4 APIs são as peças da tomada: o pino de fase (Custom Elements), o pino terra (Shadow DOM), a caixa protetora (Template) e o fio (ES Modules).
+    </div>
+    <div id="wco-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-wco">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-wco-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-wco')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-wco-q0" data-correct="2" data-expl="Web Components é um conjunto de 4 APIs nativas: Custom Elements (novos elementos HTML), Shadow DOM (encapsulamento), HTML Templates (<template> e <slot>) e ES Modules (distribuição). Juntas permitem criar componentes reutilizáveis nativamente no browser sem depender de framework. Não é um framework — é uma plataforma.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Web Components é um framework JavaScript? O que exatamente são Web Components?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">A) Sim, é um framework minimalista criado pelo Google como alternativa ao React</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">B) É uma biblioteca como jQuery — fornece utilitários para manipulação de DOM com componentes</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">C) É um conjunto de 4 APIs nativas do browser (Custom Elements, Shadow DOM, HTML Templates, ES Modules) padronizadas pelo W3C — sem framework, sem dependências</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">D) É o nome do padrão que define como React, Angular e Vue devem implementar componentes</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-wco-q1" data-correct="1" data-expl="O principal diferencial é interoperabilidade universal: um Web Component criado uma vez funciona em React, Angular, Vue, Svelte ou HTML puro sem adaptadores. Frameworks têm componentes incompatíveis entre si. Para design systems cross-org ou componentes de longa vida útil, essa portabilidade é decisiva. Em projetos com stack única, o framework próprio tende a oferecer melhor DX.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Qual o principal diferencial de Web Components em relação a componentes de frameworks como React ou Angular?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">A) Performance superior — Web Components usam o DOM nativo sem Virtual DOM overhead</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">B) Interoperabilidade universal — um Web Component funciona em qualquer framework ou HTML puro sem adaptadores, enquanto componentes de frameworks são incompatíveis entre si</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">C) Developer experience superior — Web Components têm melhor tooling que qualquer framework moderno</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">D) Bundle size zero — Web Components não adicionam JavaScript à aplicação</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-wco-q2" data-correct="0" data-expl="Lit (~5KB) é a biblioteca de referência criada pelo Google — abstrai o boilerplate de Custom Elements com decorators (@property, @state) e templates reativos via tagged template literals. Stencil é um compilador (Ionic) que gera Web Components a partir de JSX. FAST é da Microsoft (Fluent UI). Polymer foi o predecessor do Lit, descontinuado em 2022.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual biblioteca é considerada a referência atual para desenvolvimento de Web Components e o que a diferencia?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">A) Lit (Google) — ~5KB, abstrai boilerplate com decorators reativos e templates declarativos; substituiu o Polymer</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">B) Polymer (Google) — a biblioteca original e ainda mais usada em produção</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">C) Stencil (Ionic) — compila para Web Components e é a escolha padrão do W3C</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">D) FAST (Microsoft) — biblioteca mais leve com suporte a SSR nativo</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-wco-q3" data-correct="2" data-expl="Declarative Shadow DOM (DSD) resolve o maior problema de Web Components com SSR: sem DSD, o servidor envia apenas o light DOM e o shadow root era criado pelo JS do componente após o carregamento — causando FOUC e impossibilitando SSR real. Com DSD, o servidor escreve <template shadowrootmode='open'> diretamente no HTML e o browser processa durante o parse, sem precisar de JS para criar o shadow root. Tornou-se Baseline em 2023.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Qual problema histórico de Web Components o Declarative Shadow DOM (2023) resolveu?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">A) A impossibilidade de compartilhar CSS entre múltiplas instâncias do mesmo componente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">B) A incompatibilidade de Custom Elements com React — DSD criou uma ponte de integração</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">C) SSR impossível: sem DSD o shadow root era criado apenas via JS após carregamento — causando FOUC. DSD permite que o servidor envie o shadow root no HTML para o browser processar durante o parse</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-wco')">D) A falta de suporte a TypeScript em Web Components nativos</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- CUSTOM ELEMENTS -->
+  <div class="card">
+    <h3>Custom Elements <span class="badge">API nativa do browser</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'ce-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'ce-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'ce-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="ce-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O que são Custom Elements:</strong> API do browser que permite definir novos elementos HTML com comportamento próprio — <code>&lt;my-button&gt;</code>, <code>&lt;user-avatar&gt;</code>, <code>&lt;data-table&gt;</code>. Parte da spec HTML Living Standard. Sem framework — funciona nativamente em qualquer browser moderno (Chrome, Firefox, Safari, Edge).
+        </li>
+        <li>
+          <strong>Dois tipos:</strong>
+          <ul>
+            <li><strong>Autonomous custom elements:</strong> estendem <code>HTMLElement</code> — elemento completamente novo. <code>customElements.define('my-btn', MyBtn)</code>. Usado como <code>&lt;my-btn&gt;</code>.</li>
+            <li><strong>Customized built-in elements:</strong> estendem elementos existentes — <code>class FancyButton extends HTMLButtonElement</code>. Usado como <code>&lt;button is="fancy-button"&gt;</code>. <strong>Atenção:</strong> Safari não suporta sem polyfill.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Lifecycle callbacks — os 5 hooks:</strong>
+          <ul>
+            <li><code>constructor()</code>: criação da instância. Não acessar atributos ou filhos ainda — o elemento pode não estar no DOM. Inicializar estado interno e shadow root aqui.</li>
+            <li><code>connectedCallback()</code>: elemento inserido no DOM. Iniciar side effects — fetch, event listeners, timers. Equivalente ao <code>componentDidMount</code> do React.</li>
+            <li><code>disconnectedCallback()</code>: elemento removido do DOM. Limpar side effects — remover event listeners, cancelar timers, abortar fetches. Equivalente ao cleanup do <code>useEffect</code>.</li>
+            <li><code>attributeChangedCallback(name, oldValue, newValue)</code>: atributo observado mudou. Requer <code>static get observedAttributes()</code> retornando array de nomes. Equivalente ao <code>componentDidUpdate</code> para props.</li>
+            <li><code>adoptedCallback()</code>: elemento movido para outro documento (<code>document.adoptNode()</code>) — raro, usado em iframes.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>observedAttributes — reatividade declarativa:</strong> <code>static get observedAttributes() { return ['color', 'size', 'disabled']; }</code>. Apenas os atributos listados disparam <code>attributeChangedCallback</code>. Sem essa lista, o callback nunca é chamado — erro silencioso comum.
+        </li>
+        <li>
+          <strong>Properties vs. Attributes — distinção fundamental:</strong>
+          <ul>
+            <li><strong>Atributos:</strong> strings no HTML (<code>color="red"</code>) — <code>element.getAttribute('color')</code>. Sempre strings.</li>
+            <li><strong>Properties:</strong> valores JS na instância do objeto (<code>element.color = { r: 255, g: 0, b: 0 }</code>) — podem ser qualquer tipo.</li>
+            <li><strong>Refletir atributo em property (reflect):</strong> <code>get color() { return this.getAttribute('color'); } set color(v) { this.setAttribute('color', v); }</code>. Mantém atributo e property sincronizados — importante para acessibilidade e CSS attribute selectors.</li>
+            <li><strong>Dados complexos (objetos, arrays):</strong> usar properties, nunca serializar JSON em atributos (<code>data='[{...}]'</code>) — é antipadrão, causa parse overhead e limita tamanho.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Registro e upgrade:</strong> <code>customElements.define('tag-name', Class)</code>. O nome <strong>deve</strong> conter hífen (evita colisão com elementos HTML futuros). Se elementos são criados antes do <code>define()</code>, ficam em estado <em>undefined</em> e fazem upgrade automaticamente quando a classe é registrada. <code>customElements.whenDefined('tag-name')</code> retorna Promise para aguardar o registro.
+        </li>
+        <li>
+          <strong>Form-associated custom elements (v1):</strong> <code>static get formAssociated() { return true; }</code> + <code>ElementInternals</code> API — permite que custom elements participem de formulários nativos com validação, <code>form.submit()</code>, <code>FormData</code> e integração com <code>&lt;label for=&gt;</code>.
+        </li>
+      </ul>
+    </div>
+    <div id="ce-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🧱</span>
+      Custom Elements são como criar um bloco de LEGO personalizado. O LEGO já vem com peças padrão (div, button, input), mas você pode criar seu próprio bloco com formato, cor e encaixe especiais — e qualquer criança que tiver o manual (browser) consegue usar sem precisar de instrução extra. O lifecycle é o manual de instruções do bloco: o que fazer quando ele é encaixado na construção (connectedCallback), o que fazer quando tiram ele (disconnectedCallback).
+    </div>
+    <div id="ce-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-ce">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-ce-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-ce')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-ce-q0" data-correct="2" data-expl="O nome do custom element deve conter ao menos um hífen (kebab-case). Isso diferencia custom elements de elementos HTML nativos presentes e futuros — o W3C reserva nomes sem hífen para si. 'mybutton' ou 'Button' são inválidos e lançam DOMException no define().">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que o nome de um Custom Element deve obrigatoriamente conter um hífen?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">A) Por convenção de estilo — o browser aceita qualquer nome mas o linter recusa</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">B) Para compatibilidade com CSS — seletores com hífen têm maior especificidade</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">C) Para evitar colisão com elementos HTML nativos presentes e futuros — o W3C reserva nomes sem hífen. Nomes sem hífen lançam DOMException</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">D) Por limitação do parser HTML — o tokenizer não reconhece tags sem hífen como custom elements</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-ce-q1" data-correct="1" data-expl="attributeChangedCallback só dispara para atributos listados em observedAttributes. Sem essa lista estática, o browser não observa nenhum atributo e o callback nunca é invocado — mesmo que você o implemente. É o erro mais comum em iniciantes: implementar o callback sem declarar observedAttributes.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>attributeChangedCallback nunca é chamado mesmo implementado corretamente. Qual a causa mais provável?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">A) O elemento ainda não foi conectado ao DOM — o callback requer connectedCallback primeiro</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">B) static get observedAttributes() não foi declarado — sem essa lista o browser não observa nenhum atributo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">C) O atributo foi definido via property (element.color = 'red') em vez de setAttribute()</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">D) attributeChangedCallback requer Shadow DOM para funcionar</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-ce-q2" data-correct="0" data-expl="Atributos HTML são sempre strings. Passar um objeto via setAttribute('data', JSON.stringify(obj)) funciona mas é antipadrão: parse overhead, limitação de tamanho, perda de referência (você recebe uma cópia deserializada). O correto para dados complexos é usar properties JS: element.data = { items: [...] } — comunicação direta por referência, sem serialização.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Como passar dados complexos (array de objetos) para um Custom Element corretamente?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">A) Via property JS: element.items = [...] — atributos são sempre strings, properties aceitam qualquer tipo JS</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">B) Via setAttribute('items', JSON.stringify([...])) — o browser deserializa automaticamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">C) Via data-* attributes com JSON — data attributes suportam objetos nativamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">D) Via CustomEvent disparado pelo pai — o elemento escuta e extrai os dados do detail</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-ce-q3" data-correct="1" data-expl="disconnectedCallback é o lugar correto para limpeza — equivalente ao return de useEffect. Event listeners adicionados em connectedCallback devem ser removidos aqui, timers cancelados, Promises abortadas via AbortController. Sem isso, referências ao elemento persistem em closures e observers causando memory leaks mesmo após o elemento ser removido do DOM.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Qual o risco de adicionar event listeners em connectedCallback sem limpar em disconnectedCallback?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">A) O browser lança TypeError ao tentar remover um listener não-registrado no disconnectedCallback</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">B) Memory leak: referências ao elemento persistem em closures dos listeners mesmo após remoção do DOM — o GC não pode coletar o elemento</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">C) Os listeners continuam disparando mas sem efeito — o browser ignora eventos de elementos desconectados</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-ce')">D) Nenhum risco — o browser remove automaticamente listeners quando o elemento é desconectado</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- SHADOW DOM -->
+  <div class="card">
+    <h3>Shadow DOM <span class="badge">Encapsulamento · Scoped Styles · Slots</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'sd-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'sd-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'sd-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="sd-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O que é Shadow DOM:</strong> sub-árvore DOM isolada anexada a um elemento — invisível ao document principal para queries (<code>document.querySelector</code> não penetra o shadow boundary). Encapsula markup, estilos e comportamento. O mesmo mecanismo usado internamente pelo browser para <code>&lt;input type="date"&gt;</code>, <code>&lt;video&gt;</code> controls e <code>&lt;details&gt;</code>.
+        </li>
+        <li>
+          <strong>Criando um Shadow Root:</strong>
+          <br><code>const shadow = this.attachShadow({ mode: 'open' })</code>
+          <br><strong>mode: 'open'</strong>: shadow root acessível via <code>element.shadowRoot</code> do JS externo.
+          <br><strong>mode: 'closed'</strong>: <code>element.shadowRoot</code> retorna <code>null</code> — o shadow root só é acessível via a referência interna retornada por <code>attachShadow()</code>. Proteção limitada — extensões e DevTools ainda acessam.
+        </li>
+        <li>
+          <strong>Encapsulamento de estilos — como funciona:</strong>
+          <ul>
+            <li>CSS dentro do shadow root não vaza para fora — <code>.button { color: red }</code> não afeta <code>.button</code> do documento.</li>
+            <li>CSS global do documento não penetra o shadow boundary — exceto propriedades herdáveis (<code>color</code>, <code>font-family</code>, <code>font-size</code>, <code>line-height</code>) que atravessam a boundary por herança natural.</li>
+            <li>CSS Variables (custom properties) atravessam o shadow boundary — mecanismo oficial de theming: <code>--primary-color: blue</code> definida no host é lida dentro do shadow.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>:host, :host-context e ::slotted — seletores especiais:</strong>
+          <ul>
+            <li><code>:host</code>: seleciona o próprio elemento host do shadow root. <code>:host { display: block; }</code> — essencial pois custom elements são inline por padrão.</li>
+            <li><code>:host(.active)</code>: estilos condicionais baseados em classe do host.</li>
+            <li><code>:host-context(.dark-theme)</code>: estilos quando um ancestral tem a classe — theming contextual.</li>
+            <li><code>::slotted(p)</code>: estiliza elementos externos passados via slot. Apenas o primeiro nível de slotted — não penetra nested shadow roots.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Slots — projeção de conteúdo:</strong> permitem que o consumidor do componente injete conteúdo dentro do shadow DOM.
+          <br><code>&lt;slot name="header"&gt;&lt;/slot&gt;</code> — slot nomeado.
+          <br><code>&lt;slot&gt;&lt;/slot&gt;</code> — slot padrão (captura todo conteúdo não-atribuído).
+          <br>Uso: <code>&lt;my-card&gt;&lt;h2 slot="header"&gt;Título&lt;/h2&gt;Conteúdo padrão&lt;/my-card&gt;</code>.
+          <br>Slotted content permanece no light DOM — não é movido para o shadow. É uma projeção visual. O estilo do documento ainda se aplica ao slotted content.
+        </li>
+        <li>
+          <strong>Event retargeting:</strong> eventos que ocorrem dentro do shadow DOM têm seu <code>target</code> reescrito para o host element quando observados de fora — o shadow boundary é preservado. <code>event.composedPath()</code> retorna o path real incluindo elementos internos ao shadow. Eventos custom devem usar <code>composed: true</code> para atravessar o boundary: <code>new CustomEvent('change', { bubbles: true, composed: true })</code>.
+        </li>
+        <li>
+          <strong>Declarative Shadow DOM (DSD):</strong> permite definir o shadow root diretamente no HTML via <code>&lt;template shadowrootmode="open"&gt;</code> — sem JS para criação do shadow root. Fundamental para SSR de Web Components: o servidor envia o HTML com shadow root já declarado, sem aguardar JS para criar o componente.
+          <br><code>&lt;my-card&gt;&lt;template shadowrootmode="open"&gt;&lt;slot&gt;&lt;/slot&gt;&lt;/template&gt;&lt;/my-card&gt;</code>
+        </li>
+        <li>
+          <strong>CSS Parts — API de customização explícita:</strong> <code>part="button"</code> no shadow DOM expõe pontos de customização. Do lado de fora: <code>my-card::part(button) { background: blue; }</code>. Abordagem mais segura que CSS Variables para customizações estruturais — o autor do componente controla o que é customizável.
+        </li>
+        <li>
+          <strong>Adotable Stylesheets (Constructable Stylesheets):</strong> <code>const sheet = new CSSStyleSheet(); sheet.replaceSync('...')</code>. Compartilhe entre múltiplos shadow roots: <code>shadowRoot.adoptedStyleSheets = [sheet]</code>. Zero duplicação de CSS em múltiplas instâncias — a mesma folha de estilo é compartilhada por referência (sem cópia). Ideal para design systems com muitos componentes.
+        </li>
+      </ul>
+    </div>
+    <div id="sd-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🧲</span>
+      Shadow DOM é como uma sala secreta dentro de uma casa. Por fora você vê a porta (o elemento host). Por dentro tem sua própria decoração (estilos) que ninguém de fora consegue mudar. Mas você pode deixar uma janelinha (slot) onde os visitantes podem colocar a foto deles na parede — sem entrar na sala secreta. CSS Variables são como a cor da tinta que entra pela fresta da porta — o dono de fora escolhe a cor, o interior usa ela.
+    </div>
+    <div id="sd-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-sd">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-sd-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-sd')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-sd-q0" data-correct="2" data-expl="CSS custom properties (variables) são herdáveis por design e atravessam o shadow boundary via herança CSS. É o mecanismo oficial de theming de Web Components: o document define --primary-color e o shadow root lê com var(--primary-color). Propriedades normais como color, font-family também atravessam por herança — apenas regras de seletor (classes, IDs) ficam contidas.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Como CSS do documento externo pode influenciar estilos dentro de um Shadow DOM?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">A) Usando !important — quebra o encapsulamento do Shadow DOM</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">B) Via atributo style inline no host element — atravessa o boundary diretamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">C) Via CSS Custom Properties (variables) que atravessam o shadow boundary por herança, e propriedades herdáveis como color e font-family</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">D) Não é possível — Shadow DOM é completamente impermeável a estilos externos</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sd-q1" data-correct="1" data-expl="Slotted content permanece no light DOM — não é fisicamente movido para o shadow DOM, apenas projetado visualmente. Por isso os estilos do documento continuam se aplicando: a especificidade do documento ainda vale para esses elementos. ::slotted() no shadow CSS tem especificidade mais baixa que seletores do documento — o documento sempre vence em conflito.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Conteúdo passado via slot é movido para dentro do Shadow DOM?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">A) Sim — o browser move os nós para dentro do shadow root durante o rendering</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">B) Não — slotted content permanece no light DOM e é apenas projetado visualmente. Os estilos do documento continuam se aplicando a ele</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">C) Depende do mode: open move, closed não move</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">D) O conteúdo é clonado — o original fica no light DOM e uma cópia vai para o shadow</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sd-q2" data-correct="0" data-expl="event.target dentro de um handler externo ao shadow boundary aponta para o host element (retargeting). O browser reescreve o target para preservar o encapsulamento — o consumidor não precisa saber da estrutura interna. Para ver o path real incluindo elementos internos, use event.composedPath(). Para CustomEvents atravessarem o boundary, devem ser criados com composed: true.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Um click ocorre em um elemento dentro do Shadow DOM. O que event.target mostra em um listener externo?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">A) O host element — o browser faz retargeting para preservar o encapsulamento do shadow boundary</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">B) O elemento interno que recebeu o click — eventos atravessam o shadow boundary sem modificação</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">C) null — eventos dentro do shadow DOM não propagam para o document</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">D) O document.body — o browser normaliza o target para o ancestral mais próximo no light DOM</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sd-q3" data-correct="1" data-expl="Declarative Shadow DOM permite que o servidor envie o shadow root já no HTML via <template shadowrootmode='open'> — sem JS para criar o shadow root. O browser processa o template e cria o shadow root durante o parse do HTML. Isso resolve o principal problema de SSR com Web Components: sem DSD, o servidor envia apenas o light DOM e o shadow root é criado via JS após o carregamento, causando FOUC (Flash of Unstyled Content).">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Por que Declarative Shadow DOM é fundamental para SSR de Web Components?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">A) Permite que o shadow root seja compartilhado entre múltiplas instâncias do mesmo componente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">B) Permite que o servidor envie o shadow root no HTML — o browser o processa sem JS, eliminando FOUC e tornando o componente visível antes do JS carregar</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">C) Habilita CSS scoping no servidor sem necessidade de class name hashing</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sd')">D) Substitui o slot mechanism por projeção de conteúdo server-side</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- HTML TEMPLATES -->
+  <div class="card">
+    <h3>HTML Templates &amp; Interoperabilidade <span class="badge">&lt;template&gt; · &lt;slot&gt; · Frameworks</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'tpl-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'tpl-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'tpl-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="tpl-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>&lt;template&gt; — HTML inerte:</strong> conteúdo dentro de <code>&lt;template&gt;</code> é parseado mas não renderizado, não baixa recursos (<code>&lt;img src&gt;</code> não dispara request) e não executa scripts. Acessado via <code>template.content</code> (um <code>DocumentFragment</code>). Clonado com <code>template.content.cloneNode(true)</code> para uso. Extremamente performático para criar múltiplas instâncias idênticas.
+        </li>
+        <li>
+          <strong>Padrão típico de uso:</strong>
+          <pre style="background:var(--surface2);padding:.8rem;border-radius:8px;font-size:.8rem;overflow-x:auto;margin-top:.4rem"><code>class MyList extends HTMLElement {
+  connectedCallback() {
+    const tmpl = document.getElementById('my-item-tpl');
+    this.data.forEach(item =&gt; {
+      const clone = tmpl.content.cloneNode(true);
+      clone.querySelector('.name').textContent = item.name;
+      this.shadowRoot.appendChild(clone);
+    });
+  }
+}</code></pre>
+        </li>
+        <li>
+          <strong>Interoperabilidade com frameworks — o estado atual:</strong>
+          <ul>
+            <li><strong>React (≤18):</strong> passa atributos como strings, não properties. Eventos custom não propagam ao React (ele usa delegação de eventos no root). Solução: wrappers com <code>useRef</code> + <code>useEffect</code> para setar properties e adicionar listeners manualmente. <strong>React 19:</strong> suporte nativo melhorado — passa properties automaticamente e suporta eventos custom.</li>
+            <li><strong>Angular:</strong> suporte nativo via <code>CUSTOM_ELEMENTS_SCHEMA</code> ou <code>NO_ERRORS_SCHEMA</code>. Bindings <code>[property]="value"</code> funcionam para properties; <code>(event)="handler()"</code> para CustomEvents. <code>@angular/elements</code> exporta componentes Angular como Web Components.</li>
+            <li><strong>Vue:</strong> suporte nativo — <code>:prop="value"</code> seta properties se o elemento tiver a property, caso contrário usa setAttribute. <code>@event="handler"</code> funciona com CustomEvents.</li>
+            <li><strong>Svelte:</strong> excelente suporte nativo. Pode compilar componentes Svelte como Web Components via <code>customElement: true</code> no config.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>@angular/elements — Angular como Web Components:</strong> encapsula um componente Angular em um Custom Element — o Angular bootstraps em um shadow root, gerenciando seu próprio change detection. Permite usar componentes Angular em qualquer aplicação HTML sem o framework completo. Útil para design systems cross-framework e migração incremental de apps legadas.
+        </li>
+        <li>
+          <strong>Lit — a biblioteca de referência para Web Components:</strong> desenvolvida pelo Google, ~5KB gzip. Estende <code>LitElement</code> que gerencia reatividade, rendering e lifecycle. Usa tagged template literals (<code>html\`&lt;div&gt;${this.name}&lt;/div&gt;\`</code>) para templates declarativos com atualizações eficientes. <code>@property()</code> decorator declara properties reativas que re-renderizam ao mudar.
+        </li>
+        <li>
+          <strong>Custo de interoperabilidade vs. benefício:</strong> Web Components são ideais quando o componente precisa ser usado em múltiplos frameworks/contextos. Para um produto com um único framework, o custo de interoperabilidade (wrappers, serialização de dados, gestão de ciclo de vida) raramente compensa — use os primitivos do framework diretamente. Design systems cross-org são o caso de uso mais sólido.
+        </li>
+      </ul>
+    </div>
+    <div id="tpl-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🍪</span>
+      O &lt;template&gt; é o cortador de biscoito: você define o formato uma vez e pode cortar quantos biscoitos quiser com o mesmo molde, sem precisar redesenhar. O Lit é o kit de confeitaria completo — já vem com o cortador, a massa pronta e a cobertura automática. Você só precisa dizer o sabor (os dados) e ele faz tudo.
+    </div>
+    <div id="tpl-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-tpl">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-tpl-pts">0</b> / 3</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-tpl')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-tpl-q0" data-correct="1" data-expl="Conteúdo dentro de <template> não é renderizado, não dispara requests (img.src não baixa, script não executa) e não tem efeito no layout. É um DocumentFragment inativo. Isso o torna ideal para templates de alto volume — você clona o conteúdo quantas vezes precisar sem overhead de parsing repetido.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>O que torna &lt;template&gt; diferente de uma &lt;div hidden&gt; para armazenar markup reutilizável?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">A) &lt;template&gt; tem melhor compatibilidade com Shadow DOM enquanto div hidden não funciona com Web Components</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">B) Conteúdo em &lt;template&gt; não é renderizado NEM baixa recursos (img não faz request, script não executa) — div hidden apenas esconde visualmente mas o browser processa tudo normalmente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">C) &lt;template&gt; permite data binding nativo enquanto div hidden é estático</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">D) Ambos são equivalentes em performance — a diferença é apenas semântica</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-tpl-q1" data-correct="0" data-expl="React ≤18 usa event delegation no root container — apenas eventos que borbulham até o root são capturados. CustomEvents de Web Components com composed: false não chegam ao root. Mesmo com composed: true, React não mapeia o event name para handlers React. A solução é usar useRef + useEffect para adicionar addEventListener diretamente no elemento host — contornando a delegação do React.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Por que CustomEvents de Web Components não funcionam com event handlers React (&lt;my-wc onMyEvent={fn}&gt;) no React ≤18?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">A) React usa event delegation no root — CustomEvents não são delegados automaticamente. Solução: useRef + addEventListener direto no elemento</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">B) CustomEvents requerem prefixo 'on' em camelCase — usar onmyevent em vez de onMyEvent</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">C) Shadow DOM bloqueia a propagação de eventos para o React root por design</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">D) React converte CustomEvents para SyntheticEvents que têm interface diferente</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-tpl-q2" data-correct="2" data-expl="@angular/elements compila um componente Angular (com seus serviços, change detection e template) em um Custom Element. O Angular bootstraps internamente no shadow root do elemento. O componente pode ser usado em qualquer HTML sem o framework completo — útil para design systems cross-framework, widgets embarcados em sites legados e migração incremental de aplicações AngularJS/jQuery para Angular moderno.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual o principal caso de uso de @angular/elements?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">A) Melhorar a performance de componentes Angular usando Shadow DOM nativo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">B) Substituir Zone.js por Custom Elements para change detection</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">C) Exportar componentes Angular como Web Components reutilizáveis em qualquer framework ou HTML puro — design systems cross-framework e migração incremental</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tpl')">D) Compilar Angular para WebAssembly via Custom Elements</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
+  </div>
+
+  <!-- MICRO-FRONTENDS -->
+  <div class="card">
+    <h3>Micro-frontends <span class="badge">Arquitetura · Composição · Integração</span></h3>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'mfe-resumo')">Resumo</button>
+      <button class="tab-btn" onclick="switchTab(this,'mfe-analogia')">Analogia</button>
+      <button class="tab-btn" onclick="switchTab(this,'mfe-perguntas')">Perguntas Expert</button>
+    </div>
+    <div id="mfe-resumo" class="tab-pane active block-points">
+      <ul>
+        <li>
+          <strong>O que são Micro-frontends:</strong> extensão do conceito de microserviços para o frontend — decompõe uma aplicação grande em partes menores e independentes, cada uma de propriedade de uma equipe autônoma. Cada MFE pode ser desenvolvido, testado, deployado e escalado de forma independente, potencialmente com tecnologias diferentes.
+        </li>
+        <li>
+          <strong>Princípios fundamentais (micro-frontends.org):</strong>
+          <ul>
+            <li><strong>Be Technology Agnostic:</strong> cada MFE escolhe sua própria stack — React, Angular, Vue, Svelte ou vanilla JS.</li>
+            <li><strong>Isolate Team Code:</strong> sem variáveis globais compartilhadas, sem estado global entre MFEs. Comunicação via contratos explícitos.</li>
+            <li><strong>Establish Team Prefixes:</strong> prefixar tudo (CSS classes, localStorage keys, CustomElement names, events) para evitar colisões.</li>
+            <li><strong>Favor Native Browser Features:</strong> usar APIs nativas (CustomEvents, History API, localStorage) em vez de abstrações cross-framework.</li>
+            <li><strong>Build a Resilient Site:</strong> um MFE quebrado não deve derrubar os outros — isolamento de falhas.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Estratégias de integração:</strong>
+          <ul>
+            <li>
+              <strong>Build-time integration (npm packages):</strong> MFEs publicados como pacotes npm e importados no shell em build time. Simples, excelente DX, toolchain unificada. <strong>Problema:</strong> re-deploy do shell para atualizar qualquer MFE — perde o deploy independente. Adequado apenas para componentes de UI, não para MFEs completos.
+            </li>
+            <li>
+              <strong>Run-time via iframes:</strong> o mais antigo e mais isolado. Cada MFE em um iframe separado com URL própria. Isolamento completo de JS, CSS e DOM. <strong>Problemas:</strong> comunicação complexa (postMessage), tamanho de viewport fixo, SEO ruim, não compartilha estado de sessão facilmente, pior acessibilidade.
+            </li>
+            <li>
+              <strong>Run-time via JavaScript (Module Federation / System.js):</strong> shell carrega MFEs dinamicamente em runtime. Cada MFE expõe módulos remotos que o shell importa sob demanda. Dependências compartilhadas (React, design system) são carregadas uma vez. <strong>Padrão mais adotado para MFEs modernos.</strong>
+            </li>
+            <li>
+              <strong>Run-time via Web Components:</strong> cada MFE expõe Custom Elements. Shell inclui o script do MFE e usa os elementos (<code>&lt;checkout-flow&gt;</code>). Interoperável, mas adiciona custo de shadow DOM e lifecycle management.
+            </li>
+            <li>
+              <strong>Server-side composition (SSI / Edge-side includes):</strong> o servidor/CDN monta o HTML de múltiplos MFEs antes de enviar ao browser. Excelente para SEO e performance inicial. Complexidade de orquestração no servidor.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Module Federation (Webpack 5 / Rspack / Vite Federation):</strong> permite que uma aplicação (remote) exponha módulos e outra (host/shell) os consuma em runtime sem build conjunto.
+          <br><strong>Remote config:</strong> <code>exposes: { './Checkout': './src/Checkout' }</code>
+          <br><strong>Host config:</strong> <code>remotes: { checkout: 'checkout@https://checkout.cdn.com/remoteEntry.js' }</code>
+          <br><strong>Shared dependencies:</strong> React/ReactDOM compartilhados via <code>shared: { react: { singleton: true, requiredVersion: '^18' } }</code> — evita múltiplas instâncias do React na página (quebra hooks).
+          <br><strong>Dynamic federation:</strong> o host descobre remotes em runtime via API — permite adicionar MFEs sem re-deploy do shell.
+        </li>
+        <li>
+          <strong>Comunicação entre MFEs — padrões:</strong>
+          <ul>
+            <li><strong>Custom Events:</strong> <code>window.dispatchEvent(new CustomEvent('cart:updated', { detail: { count: 3 } }))</code>. MFEs escutam no window. Desacoplado, sem contrato de código. Risco: namespace collision → usar prefixo da equipe.</li>
+            <li><strong>Shared state store:</strong> estado compartilhado via URL (query params, hash), localStorage/sessionStorage ou um store mínimo injetado pelo shell (não o Redux completo — um pub/sub simples). Evitar compartilhar stores de frameworks.</li>
+            <li><strong>Props/Attributes (Web Components):</strong> o shell passa dados via attributes/properties ao montar o Custom Element do MFE.</li>
+            <li><strong>Backend-driven state:</strong> MFEs independentes sincronizam via backend — cada um busca seu próprio estado, nenhum depende do estado do outro MFE.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Desafios de performance em MFEs:</strong>
+          <ul>
+            <li><strong>Bundle duplication:</strong> React carregado duas vezes por dois MFEs = 2× o tamanho. Solução: Module Federation <code>shared</code> ou externals com CDN.</li>
+            <li><strong>Waterfall de carregamento:</strong> shell carrega → descobre MFEs → carrega cada MFE. Solução: preload dos scripts remotos, server-side composition.</li>
+            <li><strong>CLS de composição:</strong> MFEs que renderizam assincronamente causam layout shifts. Solução: reservar espaço (skeleton, min-height) antes do MFE renderizar.</li>
+            <li><strong>LCP distribuído:</strong> o elemento LCP pode estar em um MFE remoto — seu carregamento impacta diretamente o Core Web Vital da página.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Isolamento de CSS:</strong>
+          <ul>
+            <li>Shadow DOM: isolamento nativo mas custo de interoperabilidade com frameworks.</li>
+            <li>CSS Modules com prefixo de build: <code>.checkout__button</code> — gerado automaticamente pelo bundler.</li>
+            <li>CSS-in-JS com escopo automático (styled-components, Emotion).</li>
+            <li>Naming conventions manuais (BEM com namespace de equipe): <code>.checkout-btn</code> — frágil sem enforcement automático.</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Trade-offs — quando NÃO usar MFE:</strong> MFEs adicionam complexidade operacional significativa — múltiplos pipelines de CI/CD, contratos de API entre equipes, testes de integração cross-MFE, gestão de versões de dependências compartilhadas. Para times pequenos (&lt;3 equipes frontend) ou produtos com roadmap alinhado, o custo raramente compensa. Um monorepo bem estruturado com módulos internos bem delimitados oferece 80% dos benefícios com 20% da complexidade.
+        </li>
+      </ul>
+    </div>
+    <div id="mfe-analogia" class="tab-pane analogy-box">
+      <span class="emoji">🏪</span>
+      Um shopping center: cada loja (MFE) é independente — tem sua própria equipe, decoração, estoque e horário de funcionamento. O shopping (shell) só fornece a estrutura, a fachada e os corredores. Você pode reformar a loja de sapatos sem fechar o shopping inteiro. Mas se uma loja colocar música muito alta (CSS/JS global), atrapalha todas as outras — por isso cada loja tem suas próprias paredes (isolamento). Module Federation é o sistema de encanamento e elétrica compartilhado — você não instala uma usina separada para cada loja.
+    </div>
+    <div id="mfe-perguntas" class="tab-pane questions">
+<div class="quiz" id="qz-mfe">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-mfe-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-mfe')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-mfe-q0" data-correct="1" data-expl="Build-time integration (npm packages) exige que o shell seja rebuildado e deployado para atualizar qualquer MFE — as versões são fixadas no bundle do shell. Isso elimina o deploy independente que é o principal benefício de MFEs. Run-time integration (Module Federation, iframes) permite que cada MFE seja deployado sem tocar no shell — o shell carrega a versão mais recente do remoteEntry.js em runtime.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span>Por que integração build-time via npm packages contradiz o principal benefício de Micro-frontends?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">A) npm packages não suportam CSS encapsulado — necessário para isolamento de estilos entre MFEs</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">B) Versões dos MFEs ficam fixadas no bundle do shell — atualizar qualquer MFE exige rebuild e redeploy do shell, eliminando o deploy independente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">C) npm packages têm overhead de rede superior a Module Federation em runtime</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">D) Build-time integration expõe o código-fonte dos MFEs ao shell — violação de propriedade intelectual entre equipes</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-mfe-q1" data-correct="2" data-expl="singleton: true no shared config do Module Federation garante que apenas uma instância do React seja carregada — se dois MFEs compartilham React sem singleton, cada um carrega sua cópia. Múltiplas instâncias do React quebram hooks (useState, useContext) que dependem do React singleton para funcionar via referência compartilhada. requiredVersion especifica a versão compatível — Federation resolve a versão mais alta compatível.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span>Por que configurar React como singleton: true no Module Federation é crítico?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">A) singleton: true desabilita o lazy loading do React — carrega mais rápido no startup do shell</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">B) Permite que o React do host e do remote compartilhem o mesmo contexto de renderização para Virtual DOM unificado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">C) Garante uma única instância do React na página — múltiplas instâncias quebram hooks que dependem do React singleton por referência. Sem singleton dois MFEs carregariam duas cópias do React</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">D) singleton: true é necessário apenas para React 16 — React 18 resolve isso automaticamente</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-mfe-q2" data-correct="0" data-expl="CustomEvents no window são o padrão mais desacoplado para comunicação entre MFEs — nenhum MFE importa código do outro, apenas escuta eventos com nomes conhecidos. O contrato é o nome do evento e o formato do detail. Usar prefixo de namespace (cart:, checkout:) previne colisões. Alternativamente, estado via URL (query params) é ainda mais desacoplado e sobrevive a page refresh.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span>Qual o padrão de comunicação mais desacoplado entre dois MFEs que precisam compartilhar dados sem importar código um do outro?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">A) CustomEvents no window com prefixo de namespace — nenhum MFE importa código do outro, apenas escuta eventos com contratos explícitos de nome e detail</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">B) Redux store compartilhado carregado pelo shell e injetado como global — estado centralizado acessível por todos os MFEs</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">C) Module Federation shared state — expor o store como módulo remoto compartilhado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">D) Props drilling através do shell — o shell mantém o estado e passa como atributos para cada MFE</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-mfe-q3" data-correct="1" data-expl="O elemento LCP pode estar dentro de um MFE remoto carregado dinamicamente. O shell carrega → descobre o remote → baixa o remoteEntry.js → carrega o chunk do MFE → renderiza o elemento LCP. Cada etapa adiciona latência. Solução: preload do remoteEntry.js do MFE crítico no shell (<link rel=preload>), server-side composition para renderizar o MFE no servidor, ou garantir que o elemento LCP esteja no shell e não em um MFE remoto.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span>Como MFEs carregados via Module Federation podem impactar o LCP da página e como mitigar?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">A) MFEs não impactam LCP — são carregados em iframes isolados que o browser não considera para métricas CWV</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">B) Se o elemento LCP está em um MFE remoto, a cadeia shell→remoteEntry→chunk→render adiciona latência ao LCP. Mitigação: preload do remoteEntry crítico, server-side composition, ou mover o elemento LCP para o shell</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">C) Module Federation usa HTTP/2 push para pré-carregar MFEs automaticamente — sem impacto no LCP</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-mfe')">D) O LCP de MFEs é medido separadamente — cada MFE tem seu próprio score de CWV independente do shell</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+    </div>
   </div>
 
 </section>
