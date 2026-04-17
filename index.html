@@ -1728,14 +1728,51 @@
       São os sinais vitais de um paciente: <strong>latência</strong> é o tempo de resposta (frequência cardíaca), <strong>tráfego</strong> é quantas consultas estão chegando (fluxo de pacientes), <strong>erros</strong> são diagnósticos incorretos ou falhas no tratamento, e <strong>saturação</strong> é o hospital cheio — quando a sala de espera transborda, tudo piora antes mesmo de alguém reclamar.
     </div>
     <div id="gs-perguntas" class="tab-pane questions">
-      <ol>
-        <li>Por que alertar em médias de latência é perigoso? Como você configuraria alertas baseados em percentis para evitar "alertas que não acordam ninguém de noite"?</li>
-        <li>Explique a relação entre os 4 Golden Signals e a definição de SLOs. Como você traduziria "99,9% das requests em menos de 200ms" em alertas acionáveis sem gerar ruído?</li>
-        <li>Saturation pode ser difícil de medir diretamente. Quais métricas proxy você usaria para detectar saturação antecipada em uma aplicação Node.js single-threaded?</li>
-        <li>Como os 4 Golden Signals se comportam em arquiteturas serverless (Lambda/Cloud Functions) onde infraestrutura é efêmera e você não controla a saturação diretamente?</li>
-        <li>Descreva como você construiria um runbook de on-call baseado nos 4 Golden Signals que permita a um engenheiro junior diagnosticar e agir em incidentes de produção.</li>
-      </ol>
+<div class="quiz" id="qz-gs">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-gs-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-gs')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-gs-q0" data-correct="1" data-expl="A média é dominada pelos casos rápidos (maioria) e mascara a cauda. Se 1% dos usuários espera 10s, a média mal muda. p95 e p99 expõem exatamente quem está sofrendo — e são a base dos SLOs de latência.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Por que alertar na média de latência é perigoso e qual a alternativa correta?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">A) Médias são imprecisas para latências abaixo de 1ms — usar soma total</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">B) A média esconde a cauda longa: p99 pode estar em 5s enquanto a média aparece em 200ms. Alertar em p95/p99 garante que usuários lentos sejam detectados</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">C) Médias só são perigosas em sistemas com menos de 1000 req/s</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">D) O problema é que médias não suportam alertas baseados em SLO</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-gs-q1" data-correct="1" data-expl="Alertar em cada violação individual gera ruído extremo. Burn rate alerts (Google SRE Workbook) medem velocidade de consumo do error budget: fast burn (1h: 14x) = page imediato; slow burn (6h: 6x) = ticket. Acionável e proporcional ao impacto real.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Como traduzir SLO de 99,9% das requests &lt; 200ms em alertas acionáveis sem ruído?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">A) Alertar sempre que qualquer request ultrapassar 200ms</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">B) Usar burn rate alert: monitorar a taxa de consumo do error budget — se o budget de 30 dias está sendo consumido X vezes mais rápido que o normal, disparar alerta proporcional à severidade</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">C) Calcular a média a cada 1 minuto e alertar se ultrapassar 200ms</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">D) Alertar apenas quando o SLO já foi violado (99,9% &lt; threshold)</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-gs-q2" data-correct="1" data-expl="Node.js é single-threaded: saturação aparece como event loop lag crescente (callbacks esperando na fila), heap pressure (GC frequente) e fila de I/O acumulada — antes de qualquer CPU 100% que seria impossível em single thread.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Quais métricas proxy indicam saturação antecipada em Node.js single-threaded?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">A) CPU user time e numero de processos Node.js em execução</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">B) Event loop lag (tempo que callbacks ficam na fila antes de executar), tamanho da fila de I/O, heap usado vs. heap limit e GC pause time</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">C) Numero de conexões TCP abertas e bytes de rede recebidos por segundo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">D) Numero de Promises pendentes e tamanho do call stack máximo</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-gs-q3" data-correct="1" data-expl="Em serverless, saturação não é CPU/memória do servidor — é o limite de concorrência da plataforma. Throttling rate, cold start frequency e concurrency utilization vs. reserved concurrency são os proxies corretos de saturação em Lambda/Cloud Functions.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span> Como Golden Signals se aplicam em arquiteturas serverless onde você não controla saturação da infra?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">A) Golden Signals não se aplicam a serverless — use apenas cold start time e invocation count</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">B) Latência e erros funcionam igual; tráfego mapeia para invocation rate; saturação se manifesta como throttling (429 da plataforma), concurrency limit hit e cold start rate crescente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">C) Em serverless, saturação é gerenciada pelo provedor — monitore apenas custo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gs')">D) Substitua saturação por memory utilization por invocation</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 </section>
 
@@ -1769,12 +1806,41 @@
         Uma fábrica com esteira de produção: as peças são feitas em bancadas separadas (feature branches), passam por controle de qualidade (develop), depois por inspeção final (release branch) e só então chegam ao cliente (main). Um defeito no produto entregue vai para um reparo expresso (hotfix) sem parar a linha.
       </div>
       <div id="gf-perguntas" class="tab-pane questions">
-        <ol>
-          <li>Git Flow foi projetado para releases versionadas. Quais são os problemas concretos ao tentar usá-lo para entrega contínua (CD)?</li>
-          <li>Como você lida com cherry-picks entre <code>main</code> e <code>develop</code> após um hotfix? Quais riscos de divergência surgem?</li>
-          <li>Em que cenários o overhead do Git Flow compensa em relação ao Trunk-Based Development?</li>
-        </ol>
-      </div>
+<div class="quiz" id="qz-gf">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-gf-pts">0</b> / 3</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-gf')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-gf-q0" data-correct="1" data-expl="CD pressupõe integração frequente (idealmente diária) ao trunk para detectar conflitos cedo. Git Flow cria branches de vida longa (develop, release, feature) que divergem por dias/semanas — o custo de merge cresce exponencialmente com o tempo.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Qual é o principal problema do Git Flow em entrega contínua (CD)?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">A) Git Flow não suporta pull requests no GitHub</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">B) Branches de vida longa (develop, release) acumulam divergência e tornam integração cara; CD exige integração frequente ao trunk — Git Flow cria o oposto</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">C) Git Flow exige que todos os commits sejam assinados com GPG</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">D) O branch develop não pode ser deployado em ambientes de staging</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-gf-q1" data-correct="1" data-expl="Cherry-pick copia o commit mas cria um commit diferente (SHA diferente) — se develop e main divergiram, um merge futuro pode reintroduzir o bug se o contexto mudou. Merge explícito é mais seguro mas exige resolução cuidadosa de conflitos.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Após um hotfix aplicado em main, como sincronizar develop corretamente e quais riscos surgem?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">A) Fazer rebase de develop em cima de main — mantém histórico linear sem riscos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">B) Cherry-pick ou merge do hotfix em develop; risco de conflito se develop já avançou além do ponto do bug, podendo reintroduzir o bug em versões futuras se mal executado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">C) Deletar e recriar develop a partir de main após o hotfix</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">D) Nenhuma sincronização é necessária — develop e main têm ciclos de vida independentes</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-gf-q2" data-correct="1" data-expl="Git Flow brilha em software com releases discretas e suporte a múltiplas versões — ex: biblioteca com v1.2.x e v2.0.x em paralelo. Para aplicações web com deploy contínuo a um único ambiente de produção, o overhead não compensa.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Em qual cenário o overhead do Git Flow compensa vs. Trunk-Based Development?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">A) Em projetos com mais de 10 desenvolvedores</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">B) Em produtos com múltiplas versões mantidas simultaneamente em produção (ex: biblioteca open source com v1.x e v2.x em suporte ativo) onde releases isoladas e patches por versão são necessários</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">C) Em times que usam Jira para gerenciar sprints</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-gf')">D) Quando o CI/CD pipeline demora mais de 30 minutos</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
     </div>
 
     <!-- Trunk Based -->
@@ -1800,12 +1866,41 @@
         Um trem bala com uma única trilha principal. Todo mundo embarca na mesma trilha, e o trem parte frequentemente. Se uma peça não está pronta, ela viaja coberta (feature flag) — visível mas inativa. Não há estação secundária esperando — ou embarca agora ou perde o trem.
       </div>
       <div id="tb-perguntas" class="tab-pane questions">
-        <ol>
-          <li>Como você evita que feature flags virem dívida técnica permanente? Qual é o lifecycle adequado de uma flag?</li>
-          <li>TBD exige que testes rodem rápido. Qual estratégia você usaria para manter um suite de testes sob 10 minutos em um monorepo grande?</li>
-          <li>Como você lida com breaking changes de API em TBD quando múltiplos serviços precisam migrar em conjunto (expand-contract pattern)?</li>
-        </ol>
-      </div>
+<div class="quiz" id="qz-tb">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-tb-pts">0</b> / 3</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-tb')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-tb-q0" data-correct="1" data-expl="Flags acumuladas criam combinatorial explosion de estados e código morto que ninguém entende. O ciclo saudável: criar flag → deploy gradual → 100% habilitado → remover flag + código do caminho antigo em no máximo 1-2 sprints.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Como evitar que feature flags virem dívida técnica permanente?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">A) Usar flags apenas para features de UI, nunca para lógica de negócio</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">B) Tratar flags como código temporário: criar ticket de remoção no momento da criação, definir data de expiração, remover a flag e o código morto assim que a feature for estabilizada em produção</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">C) Manter flags indefinidamente — flexibilidade para rollback sempre vale o custo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">D) Usar apenas flags booleanas, nunca flags com múltiplos valores</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-tb-q1" data-correct="1" data-expl="Ferramentas como Nx e Turborepo calculam o grafo de dependências e rodam apenas testes dos packages afetados. Sharding paralelo distribui a carga. Cache de resultados (por hash do código) evita re-rodar testes em código não-alterado.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Como manter suite de testes abaixo de 10 minutos em um monorepo grande com TBD?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">A) Rodar apenas testes unitários no CI — testes de integração só em releases</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">B) Affected-only testing (rodar apenas testes dos packages afetados pelo commit), paralelização por shard, cache de resultados por hash de arquivo e separar smoke tests de testes completos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">C) Limitar o número de testes por PR usando políticas de cobertura máxima</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">D) Usar apenas testes E2E que cobrem mais cenários por execução</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-tb-q2" data-correct="1" data-expl="Expand-contract (também chamado parallel change) permite evoluir APIs sem branches de longa duração: expanda adicionando a nova interface, migre consumidores commit a commit no trunk, contraia removendo a interface antiga — tudo sem quebrar o build a qualquer momento.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Como lidar com breaking changes de API em TBD usando o expand-contract pattern?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">A) Fazer o breaking change diretamente em um branch de longa duração e mergear quando todos os consumidores estiverem prontos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">B) Fase expand: adicionar a nova interface mantendo a antiga; migrar consumidores incrementalmente no trunk; fase contract: remover a interface antiga após todos migrarem</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">C) Versionar a API (v1, v2) permanentemente e manter ambas para sempre</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-tb')">D) Usar feature flags para alternar entre a API antiga e nova por consumidor</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
     </div>
   </div>
 </section>
@@ -1837,14 +1932,51 @@
       Uma pirâmide de construção: a base larga (testes unitários) sustenta tudo e é construída rapidamente com tijolos pequenos. O meio (integração) são as paredes — menos peças mas mais estruturais. O topo (E2E) é a ponta — existe para mostrar que a pirâmide ficou de pé, mas não é onde você constrói a estabilidade.
     </div>
     <div id="pt-perguntas" class="tab-pane questions">
-      <ol>
-        <li>Quando testes unitários com muitos mocks dão falsa confiança? Como você decide o que deve ser mockado vs. testado com dependência real?</li>
-        <li>Explique o conceito de "Testing Trophy" de Kent C. Dodds e em quais tipos de projeto ele faz mais sentido do que a pirâmide clássica.</li>
-        <li>Como você estruturaria uma estratégia de testes para uma arquitetura de microserviços, incluindo contract tests (Pact), component tests e testes de caos?</li>
-        <li>Testes E2E são frágeis por natureza. Quais técnicas você usa para torná-los determinísticos (sem flakiness) em CI?</li>
-        <li>Como você mensura "test coverage" de forma útil — por que cobertura de linha não é suficiente e o que você mediria em vez disso?</li>
-      </ol>
+<div class="quiz" id="qz-pt">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-pt-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-pt')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-pt-q0" data-correct="1" data-expl="Mocks criam um contrato implícito com a implementação real. Se a dependência real muda de comportamento e o mock não é atualizado, os testes passam mas o sistema quebra em produção. Contract tests e integration tests com dependências reais detectam essa divergência.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Quando testes unitários com muitos mocks dão falsa confiança?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">A) Sempre que o SUT (system under test) tem mais de 5 dependências</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">B) Quando os mocks replicam comportamento incorreto da dependência real — o teste passa porque o mock está errado, não porque o código funciona</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">C) Quando os mocks são criados por ferramentas automáticas como Mockito</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">D) Apenas em testes de componentes React com shallow rendering</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-pt-q1" data-correct="1" data-expl="O Trophy coloca integration tests no centro por melhor ROI: testam comportamento real sem o overhead de E2E e sem a fragilidade de mocks excessivos de unit tests. Faz mais sentido em apps CRUD com muita integração entre camadas do que em lógica de domínio pura.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> O Testing Trophy de Kent C. Dodds prioriza qual tipo de teste e por quê?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">A) Testes unitários — base larga como na pirâmide clássica</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">B) Testes de integração (integration tests) — testam múltiplas unidades juntas e têm melhor relação custo/confiança para aplicações que integram muitos módulos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">C) Testes E2E — cobrem mais caminho de código por execução</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">D) Static analysis (TypeScript, ESLint) como primeira linha de defesa, sem testes automatizados</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-pt-q2" data-correct="1" data-expl="Consumer-driven contracts: o consumidor é quem sabe o que precisa. O provider verifica se ainda satisfaz todos os contratos publicados pelos consumidores antes de fazer deploy — detecta breaking changes antes de chegarem a produção.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Como estruturar testes de contrato (Pact) em microserviços?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">A) O provedor define o contrato e os consumidores adaptam seus testes</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">B) O consumidor define suas expectativas (contrato); o Pact broker publica; o provider verifica o contrato contra sua implementação real em CI — falha no provider quebra o deploy</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">C) Contratos são gerados automaticamente a partir dos schemas OpenAPI de cada serviço</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">D) Contract tests substituem testes de integração — não precisam rodar em ambos os lados</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-pt-q3" data-correct="1" data-expl="Flakiness em E2E vem de timing (sleeps arbitrários), estado compartilhado entre testes e dependências externas não-determinísticas. Explicit waits, isolamento de dados (fixtures por test run) e intercepção de rede (Playwright/Cypress network mocks) eliminam as principais causas.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span> Qual técnica principal torna testes E2E determinísticos (sem flakiness) em CI?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">A) Aumentar o timeout de todos os assertions para 30 segundos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">B) Usar explicit waits baseados em estado da UI (waitForSelector, waitForResponse) em vez de sleeps fixos, isolar dados de teste por execução e controlar o estado externo (clock, network) via mocks de nível de rede</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">C) Rodar testes E2E localmente e só commitar quando passarem</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-pt')">D) Reduzir o número de testes E2E para menos de 10 por suite</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 </section>
 
@@ -2098,16 +2230,51 @@
 
     <!-- PERGUNTAS EXPERT JWT -->
     <div id="jwt-perguntas" class="tab-pane questions">
-      <ol>
-        <li>Descreva o ataque de <em>algorithm confusion</em> (RS256 → HS256) passo a passo. Por que bibliotecas antigas são vulneráveis e o que a implementação correta deve fazer para tornar o ataque impossível?</li>
-        <li>Explique por que validar o claim <code>aud</code> é tão crítico quanto validar a assinatura. Construa um cenário de ataque real onde a omissão da validação de <code>aud</code> em um microserviço permite escalonamento de privilégios.</li>
-        <li>Compare as três estratégias de revogação de JWT (TTL curto + RT, denylist por <code>jti</code>, rotação de chave de emergência) em termos de: latência de requisição, carga no storage, garantias de revogação imediata e complexidade operacional.</li>
-        <li>Por que ECDSA (ES256) exige que o nonce <code>k</code> seja único por assinatura, e o que acontece matematicamente quando ele é reutilizado? Como EdDSA/Ed25519 resolve esse problema?</li>
-        <li>O ataque de <em>JWK Header Injection</em> é considerado uma falha de biblioteca, não de protocolo. Você discorda? Argumente e explique como o protocolo poderia ser mais defensivo.</li>
-        <li>Em um sistema de microserviços com 50 serviços, como você projeta a propagação de identidade entre chamadas internas? Compare: repassar o AT original do usuário, emitir um novo AT interno (Token Exchange — RFC 8693) e usar mTLS com SPIFFE/SPIRE para identidade de serviço.</li>
-        <li>JWT no <code>localStorage</code> vs. <code>HttpOnly cookie</code> vs. memória JS: construa a matriz de ameaças para cada opção considerando XSS, CSRF, tab isolation, service worker e extensões de browser maliciosas.</li>
-      </ol>
+<div class="quiz" id="qz-jwt">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-jwt-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-jwt')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-jwt-q0" data-correct="1" data-expl="A mitigação correta: a biblioteca NUNCA deve aceitar o algoritmo do header do token — o algoritmo deve ser configurado explicitamente no servidor. jose e jsonwebtoken modernos exigem que você passe o algoritmo esperado, rejeitando qualquer token com alg diferente.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Descreva o ataque algorithm confusion (RS256 -&gt; HS256). O que a implementação correta deve fazer?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">A) O atacante troca o payload sem alterar o header — a biblioteca valida com a chave errada</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">B) O atacante muda o header de alg para HS256, assina o token com a chave pública RSA (que é pública e conhecida) como secret HMAC — bibliotecas antigas que aceitam o alg do header validam com sucesso</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">C) O atacante injeta um claim admin:true no payload sem alterar a assinatura</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">D) O atacante força o servidor a usar uma chave HMAC fraca via header kid</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwt-q1" data-correct="1" data-expl="O aud claim define para qual audience o token foi emitido. Se service-B não valida que aud inclui &#39;service-b&#39;, um atacante com token legítimo para service-A pode apresentá-lo ao service-B e obter acesso indevido — token substitution attack.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Por que omitir validação do claim aud em um microserviço permite escalonamento de privilégios?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">A) aud define o papel do usuário — sem validação, qualquer usuário vira admin</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">B) Um token emitido para o serviço A (aud: service-a) pode ser apresentado ao serviço B — sem validação de aud, B aceita o token e o atacante acessa recursos de B com credenciais de A</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">C) aud contém o TTL do token — sem validação, tokens expirados são aceitos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">D) aud é usado para verificar a assinatura — sem ele, qualquer assinatura é aceita</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwt-q2" data-correct="1" data-expl="Trade-offs reais: TTL 15min = janela de 15min de exposição após compromisso; jti denylist = lookup Redis em cada request (latência + custo); rotação de chave = todos os usuários perdem sessão instantaneamente. Escolha baseada em tolerância a risco e custo operacional.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Compare as 3 estratégias de revogação de JWT: TTL curto + RT, denylist por jti e rotação de chave de emergência.</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">A) Todas têm latência de revogação zero — JWTs são stateless mas sempre verificam o servidor</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">B) TTL curto minimiza janela de exposição sem storage extra mas não é imediato; denylist por jti é imediata mas exige storage consultado em cada request; rotação de chave revoga todos os tokens de uma vez mas é disruptiva para todos os usuários</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">C) Denylist por jti é a única que garante revogação imediata sem impactar outros usuários</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">D) TTL curto é suficiente para todos os casos de uso — denylist e rotação são overengineering</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwt-q3" data-correct="1" data-expl="Com dois pares (r, s1) e (r, s2) assinados com o mesmo k: k = (h1-h2)/(s1-s2) mod n, depois d = (s*k - h)/r mod n. A reutilização de k vaza completamente a chave privada. Ed25519 resolve isso usando k = Hash(private_key_seed || message) — deterministico e sempre único.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span> O que acontece matematicamente quando o nonce k é reutilizado em ECDSA (ES256)?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">A) A assinatura fica inválida e é rejeitada pelo verificador</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">B) Com duas assinaturas usando o mesmo k e chave privada, é possível calcular algebricamente a chave privada — a Sony PS3 foi comprometida exatamente assim</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">C) O token fica maior mas continua seguro pois a curva elíptica impede a extração da chave</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwt')">D) Apenas o nonce k é vazado, não a chave privada completa</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 
   <!-- JWE -->
@@ -2378,15 +2545,51 @@
 
     <!-- PERGUNTAS EXPERT JWE -->
     <div id="jwe-perguntas" class="tab-pane questions">
-      <ol>
-        <li>Descreva o ataque de Bleichenbacher contra RSA-PKCS1-v1_5 em JWE. Como RSA-OAEP e ECDH-ES eliminam essa classe de vulnerabilidade por razões diferentes?</li>
-        <li>Por que a ordem <em>sign-then-encrypt</em> é obrigatória em Nested JWTs? Construa um ataque concreto que explora <em>encrypt-then-sign</em> para repúdio de autoria.</li>
-        <li>Compare ECDH-ES puro (<code>"alg":"ECDH-ES"</code>) com ECDH-ES+A256KW em termos de: forward secrecy, suporte a multi-destinatários e tamanho do token. Em que cenário cada um é mais adequado?</li>
-        <li>AES-GCM fornece AEAD nativamente enquanto AES-CBC+HMAC requer composição manual. Qual é o risco específico de implementar incorretamente a ordem MAC/decriptar em AES-CBC? Por que AES-GCM não tem esse problema?</li>
-        <li>Um engenheiro propõe usar <code>zip: "DEF"</code> em JWEs para reduzir o tamanho dos tokens que contêm claims de usuário. Você aprovaria? Quais condições precisam ser verdadeiras para que isso seja seguro?</li>
-        <li>Em que situações regulatórias (LGPD, HIPAA, PCI-DSS) JWE se torna necessário em vez de apenas desejável? Como você arquitetaria a gestão do ciclo de vida das chaves de criptografia (<code>enc</code>) separadas das chaves de assinatura (<code>sig</code>)?</li>
-      </ol>
+<div class="quiz" id="qz-jwe">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-jwe-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-jwe')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-jwe-q0" data-correct="1" data-expl="Bleichenbacher explora que RSA-PKCS1-v1_5 tem estrutura específica e um servidor que retorna erros diferentes para padding inválido vs. válido cria um oráculo. OAEP randomiza o padding e remove essa estrutura. ECDH-ES usa shared secret via DH — nunca há RSA encryption para atacar.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Como RSA-OAEP e ECDH-ES eliminam a vulnerabilidade Bleichenbacher de RSA-PKCS1-v1_5?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">A) Ambos adicionam padding aleatorio que torna o ataque de timing impossível</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">B) RSA-OAEP usa padding probabilístico com hash que elimina a estrutura explorada pelo oráculo de padding; ECDH-ES elimina RSA completamente — usa Diffie-Hellman e nunca encripta a chave com RSA</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">C) Ambos exigem autenticação mútua TLS que bloqueia o ataque de rede necessário para o oráculo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">D) RSA-OAEP usa chaves maiores (4096 bits) que tornam o ataque computacionalmente inviável</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwe-q1" data-correct="1" data-expl="Com encrypt-then-sign: Alice assina Enc(msg). Bob pode pegar Enc(msg&#39;) de outro contexto, assinar com sua própria chave e apresentar como &#39;Alice assinou isso&#39;. Ou o atacante substitui o ciphertext — Alice assina sem saber o que está dentro. Sign-then-encrypt garante que a assinatura é sobre o plaintext conhecido.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Por que sign-then-encrypt é obrigatório em Nested JWTs? Qual ataque explora encrypt-then-sign?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">A) Sign-then-encrypt é preferido por performance — uma operação a menos no destinatário</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">B) Com encrypt-then-sign, o assinante assina o ciphertext sem ver o plaintext — um atacante pode substituir o ciphertext por outro e re-assinar, atribuindo ao signatário original um conteúdo que ele nunca viu (repúdio de autoria)</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">C) Encrypt-then-sign vaza a chave pública do remetente para interceptadores de rede</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">D) Sign-then-encrypt é o padrão RFC — encrypt-then-sign foi removido da especificação JWE</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwe-q2" data-correct="1" data-expl="No ECDH-ES puro a CEK É o shared secret — não há wrapped key no token, forward secrecy máxima, mas todos devem compartilhar a mesma CEK (impossível para múltiplos destinatários com chaves diferentes). Com KW, a CEK é gerada aleatoriamente e encriptada separadamente para cada destinatário.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Compare ECDH-ES puro vs. ECDH-ES+A256KW em termos de forward secrecy e multi-destinatários.</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">A) ECDH-ES puro suporta múltiplos destinatários nativamente; ECDH-ES+A256KW não</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">B) ECDH-ES puro deriva a CEK diretamente do shared secret (forward secrecy máxima, CEK não é transmitida) mas não suporta múltiplos destinatários; ECDH-ES+A256KW encripta uma CEK separada para cada destinatário permitindo multi-destinatário</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">C) Ambos têm forward secrecy equivalente — a diferença é apenas no tamanho do token</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">D) ECDH-ES+A256KW tem forward secrecy superior por usar AES-256 adicional</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-jwe-q3" data-correct="0" data-expl="Padding oracle: se você decripta primeiro e só depois verifica o MAC, um atacante pode submeter ciphertexts malformados e inferir o plaintext pela diferença de erro (padding inválido vs. MAC inválido). AES-GCM é AEAD — a tag GCM autentica o ciphertext inteiro antes de qualquer byte ser decriptado.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span> Qual o risco de implementar MAC-then-decrypt incorretamente com AES-CBC? Por que AES-GCM não tem esse problema?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">A) MAC-then-decrypt pode aceitar padding inválido antes de verificar o MAC — criando um padding oracle. AES-GCM é AEAD: autenticação e criptografia são inseparáveis, a tag autentica antes de qualquer decriptação</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">B) O risco é que HMAC é mais lento que AES, causando timing attacks por diferença de latência</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">C) MAC-then-decrypt usa a mesma chave para MAC e criptografia — key reuse attack. AES-GCM usa chaves derivadas separadas</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-jwe')">D) AES-CBC com MAC correto é equivalente a AES-GCM em segurança — a diferença é apenas performance</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 
   <!-- Session Based -->
@@ -2411,12 +2614,41 @@
       É como um vestiário de clube: você entrega seus pertences (credenciais), recebe um número de armário (Session ID) num pulseira (cookie), e toda vez que apresenta a pulseira na porta, o atendente verifica no caderno (session store) o que está liberado pra você. Se a pulseira for perdida, o clube pode cancelar aquele número imediatamente.
     </div>
     <div id="sess-perguntas" class="tab-pane questions">
-      <ol>
-        <li>Como você implementa sticky sessions vs. session store centralizado em um cluster? Quais são os pontos de falha de cada abordagem?</li>
-        <li>O que é "session fixation"? Como a regeneração de ID após autenticação bem-sucedida mitiga esse ataque?</li>
-        <li>Compare session-based auth e JWT em termos de: revogação, latência, escalabilidade horizontal e segurança em dispositivos móveis.</li>
-      </ol>
+<div class="quiz" id="qz-sess">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-sess-pts">0</b> / 3</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-sess')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-sess-q0" data-correct="1" data-expl="Sticky sessions via load balancer (cookie ou IP affinity) quebram quando o nó morre ou é reiniciado — todos os usuários daquele nó perdem sessão. Redis centralizado resolve isso mas exige alta disponibilidade do Redis (Sentinel/Cluster) e adiciona latência de rede em cada validação de sessão.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> Sticky sessions vs. session store centralizado — quais são os pontos de falha de cada um?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">A) Sticky sessions são mais seguras pois os dados nunca saem do servidor; centralizado é mais rápido</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">B) Sticky sessions: falha de um nó perde todas as sessões daquele nó; não distribui carga uniformemente. Centralizado (Redis): o store vira single point of failure; latência de rede adicional em cada request autenticado</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">C) Sticky sessions não funcionam com HTTPS; centralizado funciona com qualquer protocolo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">D) Centralizado não suporta WebSockets; sticky sessions suportam qualquer protocolo</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sess-q1" data-correct="0" data-expl="Fluxo do ataque: atacante obtém um session ID válido (pré-autenticação), faz a vítima usar esse ID (via URL param ou cookie injetado), a vítima faz login — o servidor autentica aquele ID sem trocar. Mitigação: sempre regenerar o session ID após autenticação bem-sucedida (req.session.regenerate() no Express).">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> O que é session fixation e como a regeneração de ID após login mitiga o ataque?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">A) Session fixation é quando o atacante força o usuário a usar um session ID conhecido pelo atacante antes da autenticação — após o login, o servidor eleva os privilégios naquele ID sem trocar, e o atacante usa o ID que já conhecia</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">B) Session fixation é um ataque de força bruta que testa session IDs sequenciais</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">C) Session fixation ocorre quando dois usuários recebem o mesmo session ID por colisão de hash</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">D) É quando a sessão expira antes do TTL configurado por manipulação do cookie</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-sess-q2" data-correct="1" data-expl="O trade-off fundamental: sessions precisam de storage compartilhado (custo operacional) mas você pode invalidar qualquer sessão instantaneamente. JWT é stateless (escala bem) mas você paga o custo de revogação — ou aceita o risco da janela de TTL ou implementa uma denylist (que re-introduz estado).">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> Compare session-based auth e JWT em escalabilidade horizontal e revogação.</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">A) JWT é sempre superior — stateless elimina todos os problemas de sessions distribuídas</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">B) Sessions exigem storage compartilhado (Redis) mas permitem revogação imediata; JWT é stateless (sem storage) mas revogação exige denylist ou TTL curto — sem denylist, tokens comprometidos ficam válidos até expirar</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">C) Sessions escalam melhor horizontalmente porque evitam validação de assinatura criptográfica</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-sess')">D) JWT e sessions têm equivalência de segurança — a escolha é apenas de performance</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 
   <!-- OAuth 2.0 -->
@@ -2638,52 +2870,51 @@
 
     <!-- PERGUNTAS EXPERT -->
     <div id="oa-perguntas" class="tab-pane questions">
-      <ol>
-        <li>
-          Descreva passo a passo o fluxo Authorization Code + PKCE para uma SPA.
-          Como o AS valida o <code>code_verifier</code>? Por que <code>S256</code>
-          é obrigatório (e <code>plain</code> inseguro) em redes não confiáveis?
-        </li>
-        <li>
-          Qual a diferença semântica entre <strong>OAuth 2.0</strong> e
-          <strong>OpenID Connect</strong>? Por que usar o Access Token para autenticar
-          o usuário é um antipadrão — e o que pode dar errado em produção ao fazer isso?
-        </li>
-        <li>
-          Compare as estratégias de validação de tokens no Resource Server:
-          <strong>JWT local</strong> (verificação de assinatura via JWKS) vs.
-          <strong>introspecção remota</strong> (RFC 7662). Quando cada abordagem é
-          preferível e como você lida com revogação imediata em JWTs stateless?
-        </li>
-        <li>
-          Em uma arquitetura de microserviços, o serviço A recebe um AT do usuário e
-          precisa chamar o serviço B em nome do mesmo usuário. Descreva o padrão
-          <strong>Token Exchange</strong> (RFC 8693) e compare com simplesmente
-          repassar o AT original. Quais são os riscos de cada abordagem?
-        </li>
-        <li>
-          Explique o padrão <strong>BFF (Backend for Frontend)</strong> no contexto
-          de OAuth 2.0. Quais vulnerabilidades ele mitiga em SPAs? Quais trade-offs
-          arquiteturais ele introduz em termos de escalabilidade e latência?
-        </li>
-        <li>
-          Como funciona o <strong>DPoP (RFC 9449)</strong>? Como ele difere de
-          Bearer tokens em termos de proof-of-possession, e em quais cenários de
-          ameaça ele adiciona proteção real que o Bearer não oferece?
-        </li>
-        <li>
-          Implemente (pseudocódigo ou descrição precisa) o <strong>Back-Channel
-          Logout</strong> do OIDC no lado do Relying Party. Como você valida o
-          <code>logout_token</code> e garante idempotência em caso de reentregas?
-        </li>
-        <li>
-          O <strong>Refresh Token Rotation</strong> mitiga roubo de RT, mas cria
-          o risco de invalidação acidental em clientes com múltiplas abas ou
-          requisições paralelas. Como você projeta uma solução robusta para esse
-          cenário sem sacrificar a segurança da rotação?
-        </li>
-      </ol>
+<div class="quiz" id="qz-oa">
+  <div class="quiz-hdr"><span>Pontuação: <b id="qz-oa-pts">0</b> / 4</span>
+  <button class="quiz-rst" onclick="resetQuiz('qz-oa')">&#8635; Refazer</button></div>
+  <div class="quiz-q" id="qz-oa-q0" data-correct="1" data-expl="PKCE protege contra authorization code interception. Com plain: code_challenge = code_verifier — se o redirect URI vaza (logs, referrer), o atacante tem o verifier. Com S256: code_challenge = BASE64URL(SHA256(verifier)) — o verifier só é revelado no token exchange, e um hash não permite reconstituir o original.">
+    <p class="quiz-qt"><span class="quiz-qn">Q1</span> No fluxo Authorization Code + PKCE para SPA, por que S256 é obrigatório e plain é inseguro?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">A) S256 usa SHA-256 que é mais rápido que plain text para o Authorization Server validar</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">B) Com plain, o code_verifier é enviado na URL de redirect e pode ser interceptado por um attacker que captura a URL; S256 envia apenas o hash — o verifier original nunca trafega na rede antes de ser necessário</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">C) plain não é suportado pelo RFC 7636 — foi removido da especificação</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">D) S256 permite que o code_challenge seja validado sem TLS</button>
     </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-oa-q1" data-correct="1" data-expl="OAuth 2.0 responde &#39;o usuário autorizou o acesso a X&#39; — não &#39;quem é o usuário&#39;. OIDC responde &#39;o usuário é Y, autenticado em Z&#39;. Usar Access Token para autenticar (verificar identidade) falha porque o token pode ser de outro client/audience, não tem claims de identidade garantidos e não tem nonce para proteção contra replay.">
+    <p class="quiz-qt"><span class="quiz-qn">Q2</span> Qual a diferença semântica entre OAuth 2.0 e OpenID Connect, e por que usar Access Token para autenticar é antipadrão?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">A) OAuth 2.0 é para autenticação; OIDC é para autorização — são complementares mas invertidos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">B) OAuth 2.0 é um framework de autorização (delegar acesso a recursos); OIDC adiciona autenticação (Identity Layer) com ID Token e UserInfo. Usar Access Token para autenticar é errado porque seu formato e claims não são padronizados — um token de outro serviço pode ser aceito indevidamente</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">C) OIDC substitui OAuth 2.0 — sistemas modernos usam apenas OIDC</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">D) A diferença é apenas o formato do token: OAuth usa opaque tokens, OIDC usa JWT</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-oa-q2" data-correct="1" data-expl="A escolha depende do modelo de ameaça: se revogação imediata é crítica (ex: tokens de alta segurança), introspection é necessário — mas pode ser cacheado por segundos para reduzir latência. Para APIs de baixo risco com TTL curto (15min), JWKS local é mais eficiente e resiliente.">
+    <p class="quiz-qt"><span class="quiz-qn">Q3</span> JWT local (JWKS) vs. token introspection no Resource Server — quando usar cada estratégia?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">A) JWKS é para tokens de curta duração; introspection para tokens longos</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">B) JWKS (validação local): baixa latência, sem chamada de rede, mas não detecta revogação antes da expiração. Introspection: sempre fresco (detecta revogação imediata), mas adiciona latência e cria dependência do Authorization Server em cada request</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">C) JWKS só funciona com RS256; introspection suporta qualquer algoritmo</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">D) Introspection é obsoleto — JWKS é sempre preferido em sistemas modernos</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+  <div class="quiz-q" id="qz-oa-q3" data-correct="1" data-expl="Bearer tokens são como dinheiro em espécie — quem tem, usa. Token binding (RFC 8471) vincula o proof-of-possession à chave privada TLS do cliente, tornando o token inutilizável em outra conexão TLS. DPoP (RFC 9449) é a implementação moderna mais adotada — o cliente prova posse de uma chave par a cada request.">
+    <p class="quiz-qt"><span class="quiz-qn">Q4</span> O que é token binding e como mitiga token theft em comparação com bearer tokens?</p>
+    <div class="quiz-os">
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">A) Token binding associa o token a um user-agent específico via cookie SameSite</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">B) Token binding criptograficamente vincula o token à chave TLS do cliente — mesmo que o token seja roubado, só pode ser usado pela conexão TLS original do cliente legítimo; bearer tokens funcionam para qualquer portador</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">C) Token binding é implementado via PKCE e não requer suporte do servidor</button>
+      <button class="quiz-o" onclick="pickOpt(this,'qz-oa')">D) Token binding substitui refresh tokens — o acesso é renovado automaticamente via binding</button>
+    </div>
+    <div class="quiz-fb"></div>
+  </div>
+</div>
+</div>
   </div>
 </section>
 
