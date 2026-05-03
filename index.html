@@ -267,6 +267,7 @@
       <a href="#network">Network e CDN</a>
       <a href="#memoryleak">Memory Leaks</a>
       <a href="#profiling">Profiling</a>
+      <a href="#js-budget">Otimização JS/CSS & Budget</a>
     </nav>
     <article class="content-article">
 <!-- ════════════════════════════════════════════
@@ -1517,7 +1518,297 @@ const cache = new WeakMap();
     </div>
   </section>
 
-  
+<!-- ════════════════════════════════════════════
+     OTIMIZAÇÃO JS/CSS & PERFORMANCE BUDGET
+  ════════════════════════════════════════════ -->
+  <section class="section" id="js-budget">
+    <h2 class="section-title">⚖️ Otimização JS/CSS &amp; Performance Budget <span class="badge">Frontend Performance</span></h2>
+    <p class="section-sub">O que fazer para reduzir o custo do seu JavaScript e CSS — e quanto é aceitável entregar para o browser.</p>
+
+    <div class="topic">
+      <h3>📦 Tamanho Ideal: os números que importam</h3>
+      <div class="analogy">
+        <strong>Analogia:</strong> Cada KB de JS que você envia é como adicionar um passageiro num carro. Não é só o peso de baixar — é o peso de parsear, compilar e executar. Um arquivo de 300KB gzipado vira ~900KB de código que o V8 precisa processar. Em um celular mid-range, isso pode levar 3–5 segundos bloqueando a main thread.
+      </div>
+      <table>
+        <tr><th>Recurso</th><th>Budget recomendado (gzipped)</th><th>Budget máximo (gzipped)</th><th>Impacto se exceder</th></tr>
+        <tr><td><strong>JS crítico</strong> (inicial, blocking)</td><td class="green">&lt; 100 KB</td><td class="yellow">&lt; 170 KB</td><td>TTI alto, Long Tasks, INP ruim</td></tr>
+        <tr><td><strong>JS total</strong> (todos os chunks)</td><td class="green">&lt; 300 KB</td><td class="yellow">&lt; 500 KB</td><td>Memória, GC frequente</td></tr>
+        <tr><td><strong>CSS crítico</strong> (acima da dobra)</td><td class="green">&lt; 14 KB</td><td class="yellow">&lt; 50 KB</td><td>FCP alto, render-blocking</td></tr>
+        <tr><td><strong>CSS total</strong></td><td class="green">&lt; 50 KB</td><td class="yellow">&lt; 150 KB</td><td>Recalc Style lento, FOUC</td></tr>
+        <tr><td><strong>Imagem hero (LCP)</strong></td><td class="green">&lt; 75 KB</td><td class="yellow">&lt; 200 KB</td><td>LCP alto (meta: &lt; 2.5s)</td></tr>
+        <tr><td><strong>Fonte (por família)</strong></td><td class="green">&lt; 20 KB</td><td class="yellow">&lt; 50 KB</td><td>FOIT/FOUT, CLS</td></tr>
+      </table>
+      <div class="warn">⚠️ <strong>Por que 14 KB para CSS crítico?</strong> O primeiro pacote TCP tem ~14 KB. Se o CSS crítico couber nele, o browser começa a renderizar sem round-trips adicionais. Esse número vem da física da rede — não de uma convenção.</div>
+    </div>
+
+    <div class="topic">
+      <h3>🔪 Reduzir o tamanho do JS — Técnicas de Build</h3>
+
+      <h4>1. Tree Shaking — remover código morto</h4>
+      <pre>// ❌ RUIM — importa a biblioteca inteira (500KB)
+import _ from 'lodash';
+const resultado = _.groupBy(lista, 'categoria');
+
+// ✅ BOM — importa só a função (2KB)
+import groupBy from 'lodash/groupBy';
+// ou, com bundler que suporta tree shaking:
+import { groupBy } from 'lodash-es'; // versão ESM da lodash
+
+// Tree shaking só funciona com ESModules (import/export)
+// CommonJS (require) não é tree-shakeable
+// Por isso sempre prefira pacotes com campo "module" no package.json</pre>
+
+      <h4>2. Code Splitting — entregar só o que a rota precisa</h4>
+      <pre>// ❌ RUIM — tudo num bundle único
+import { PaginaAdmin } from './PaginaAdmin'; // 200KB de JS de admin
+                                              // carregado para TODOS os usuários
+
+// ✅ BOM — lazy loading por rota
+const PaginaAdmin = React.lazy(() => import('./PaginaAdmin'));
+// Angular:
+const routes = [{ path: 'admin', loadChildren: () => import('./admin/admin.module') }];
+// Vite/Webpack detecta import() e cria chunk separado:
+// admin.a3f2.js — baixado só quando o usuário navega para /admin</pre>
+
+      <h4>3. Substituir dependências pesadas</h4>
+      <table>
+        <tr><th>Biblioteca pesada</th><th>Tamanho</th><th>Alternativa leve</th><th>Tamanho</th></tr>
+        <tr><td>Moment.js</td><td class="red">67 KB</td><td>day.js</td><td class="green">2 KB</td></tr>
+        <tr><td>Lodash (completo)</td><td class="red">71 KB</td><td>lodash-es (tree-shaking)</td><td class="green">2–5 KB</td></tr>
+        <tr><td>Axios</td><td class="yellow">13 KB</td><td>fetch nativo</td><td class="green">0 KB</td></tr>
+        <tr><td>jQuery</td><td class="red">87 KB</td><td>Vanilla JS / Alpine.js</td><td class="green">0–7 KB</td></tr>
+        <tr><td>date-fns (completo)</td><td class="red">78 KB</td><td>date-fns (tree-shaking)</td><td class="green">1–4 KB</td></tr>
+      </table>
+
+      <h4>4. Differential Bundling — servir código moderno para browsers modernos</h4>
+      <pre>// Configurar targets no Vite/esbuild para não transpilar features modernas
+// que 95%+ dos browsers já suportam nativamente
+
+// vite.config.ts
+build: {
+  target: ['chrome90', 'firefox88', 'safari14'],
+  // Resultado: bundle menor — não precisa polyfills de arrow function,
+  // async/await, optional chaining, etc.
+}
+
+// Diferença real:
+// target: es5   → 400KB (transpila tudo, adiciona polyfills)
+// target: es2020 → 180KB (browsers modernos entendem nativamente)</pre>
+
+      <h4>5. Minificação e Compressão</h4>
+      <div class="diagram">Arquivo JS original:         1000 KB (código legível, com comentários)
+  │
+  ▼ Minificação (esbuild/terser)
+Minificado:                   350 KB (remove espaços, encurta nomes)
+  │
+  ▼ Gzip
+Gzip:                         100 KB (compressão de padrões repetidos)
+  │
+  ▼ Brotli (melhor que Gzip, ~15% menor)
+Brotli:                        85 KB ← o que o browser baixa de fato
+
+Regra geral: tamanho na rede ≈ tamanho minificado ÷ 3</div>
+    </div>
+
+    <div class="topic">
+      <h3>⚡ Otimizar a Execução do JS — Runtime</h3>
+
+      <h4>1. Não bloquear a main thread</h4>
+      <pre>// Long Task = qualquer coisa que demora >50ms na main thread
+// INP (Interaction to Next Paint) depende disso
+
+// ❌ RUIM — processa 10.000 itens sem parar
+function filtrar(lista) {
+  return lista.filter(item => calcularScore(item) > 0.8);
+}
+
+// ✅ BOM — divide o trabalho em fatias, libera o browser entre elas
+async function filtrarAsync(lista) {
+  const resultado = [];
+  for (let i = 0; i &lt; lista.length; i++) {
+    if (calcularScore(lista[i]) > 0.8) resultado.push(lista[i]);
+    if (i % 100 === 0) await scheduler.yield(); // cede a main thread
+  }
+  return resultado;
+}
+
+// ✅ MELHOR — move para Web Worker (outra thread, não bloqueia nada)
+const worker = new Worker('./filtrar.worker.js');
+worker.postMessage(lista);
+worker.onmessage = e => exibir(e.data);</pre>
+
+      <h4>2. Debounce e Throttle em eventos frequentes</h4>
+      <pre>// ❌ RUIM — executa em CADA keystroke (pode ser 100x/s)
+input.addEventListener('input', buscarNaAPI);
+
+// ✅ BOM — debounce: espera 300ms sem novas entradas para disparar
+import { debounce } from 'lodash-es';
+const buscarDebounced = debounce(buscarNaAPI, 300);
+input.addEventListener('input', buscarDebounced);
+
+// Diferença:
+// Debounce: executa depois que para de digitar (busca, autocomplete)
+// Throttle: executa no máximo 1x a cada N ms (scroll, resize, drag)</pre>
+
+      <h4>3. Virtualização de listas longas</h4>
+      <pre>// ❌ RUIM — renderiza 10.000 linhas no DOM
+lista.forEach(item =&gt; {
+  const el = document.createElement('div');
+  el.textContent = item.nome;
+  container.appendChild(el); // 10.000 nodes no DOM = layout lento
+});
+
+// ✅ BOM — renderiza só os ~20 itens visíveis na tela
+// Libs: @tanstack/virtual, react-window, cdk-virtual-scroll (Angular)
+const virtualizer = useVirtualizer({
+  count: lista.length,
+  getScrollElement: () => containerRef.current,
+  estimateSize: () => 50,  // altura estimada de cada item
+});
+// DOM tem sempre ~20 divs, conteúdo muda conforme scroll</pre>
+
+      <h4>4. Memoização — evitar recalcular</h4>
+      <pre>// Cálculo pesado chamado em cada render
+// ❌ RUIM (React)
+function Tabela({ dados }) {
+  const ordenado = dados.sort(comparar); // recalcula em todo re-render!
+  return &lt;table&gt;...&lt;/table&gt;;
+}
+
+// ✅ BOM — só recalcula quando `dados` muda
+function Tabela({ dados }) {
+  const ordenado = useMemo(() => dados.sort(comparar), [dados]);
+  return &lt;table&gt;...&lt;/table&gt;;
+}
+
+// Angular: pipe pure (já é memoizado por padrão)
+// {{ lista | orderBy:'nome' }}  ← só recalcula quando lista muda</pre>
+    </div>
+
+    <div class="topic">
+      <h3>🎨 Otimizar CSS</h3>
+
+      <h4>1. Critical CSS — inline o essencial, defere o resto</h4>
+      <pre>&lt;!-- CSS crítico (above-the-fold): inline no &lt;head&gt;, sem request extra --&gt;
+&lt;style&gt;
+  /* só o necessário para renderizar o que o usuário VÊ ao abrir */
+  body { margin: 0; font-family: system-ui; }
+  .hero { height: 100vh; background: #1a1a2e; }
+  .nav { display: flex; padding: 1rem; }
+&lt;/style&gt;
+
+&lt;!-- CSS não-crítico: carregado de forma não-bloqueante --&gt;
+&lt;link rel="stylesheet" href="/styles.css" media="print" onload="this.media='all'"&gt;
+&lt;noscript&gt;&lt;link rel="stylesheet" href="/styles.css"&gt;&lt;/noscript&gt;</pre>
+
+      <h4>2. Remover CSS não usado</h4>
+      <div class="diagram">Problema típico com frameworks de CSS:
+  Bootstrap completo:   ~160 KB de CSS
+  Tailwind (sem purge):  ~3.7 MB de CSS (todas as classes utilitárias)
+
+Com PurgeCSS / Tailwind JIT:
+  Bootstrap (purgado):   ~5–20 KB (só as classes usadas)
+  Tailwind (JIT/purge):  ~5–15 KB (escaneia seus templates e mantém só o usado)
+
+Configuração Tailwind:
+  content: ['./src/**/*.{html,ts,tsx,jsx}']  // quais arquivos escanear</div>
+
+      <h4>3. Evitar seletores que disparam reflow</h4>
+      <pre>/* ❌ RUIM — seletores caros (browser percorre todo o DOM) */
+* { box-sizing: border-box; }           /* universal: ok no reset, não em loops */
+div &gt; * + * { margin-top: 1rem; }       /* seletor deep em listas grandes */
+
+/* ❌ RUIM — propriedades que disparam Layout (reflow) */
+.animado:hover {
+  width: 200px;    /* muda tamanho → re-layout de TUDO ao redor */
+  top: 10px;       /* posição: re-layout */
+  padding: 20px;   /* caixa: re-layout */
+}
+
+/* ✅ BOM — só Composite (só GPU, não toca CPU/layout) */
+.animado:hover {
+  transform: translateX(10px) scale(1.1);  /* composite */
+  opacity: 0.8;                             /* composite */
+  /* Nenhum reflow. 60fps garantido. */
+}</pre>
+
+      <h4>4. contain e content-visibility</h4>
+      <pre>/* Diz ao browser: "o que está dentro desse elemento
+   não afeta o layout de fora" — permite otimizações agressivas */
+
+.card {
+  contain: layout style paint; /* ou: contain: strict */
+}
+
+/* content-visibility: skip — pula render de elementos fora da tela */
+/* Ganho enorme em páginas longas (ex: feed infinito) */
+.post {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px; /* tamanho reservado (evita CLS) */
+}</pre>
+    </div>
+
+    <div class="topic">
+      <h3>🚦 Performance Budget — como enforçar os números</h3>
+      <div class="diagram">Fluxo ideal:
+
+  1. Define budgets (ex: JS inicial &lt; 170KB gzipped)
+  2. Configura validação no build/CI
+  3. Build falha se ultrapassar → ninguém sobe código sem consciência</div>
+
+      <pre>// Webpack: bundle analysis
+// npx webpack-bundle-analyzer stats.json
+
+// Vite: rollup-plugin-visualizer
+import { visualizer } from 'rollup-plugin-visualizer';
+export default defineConfig({
+  plugins: [visualizer({ open: true })] // abre mapa visual do bundle
+});
+
+// Budget no Lighthouse CI (CI/CD)
+// lighthouserc.js
+module.exports = {
+  assert: {
+    assertions: {
+      'resource-summary:script:size': ['error', { maxNumericValue: 170_000 }], // bytes gzipped
+      'resource-summary:stylesheet:size': ['error', { maxNumericValue: 50_000 }],
+      'first-contentful-paint': ['warn', { maxNumericValue: 1800 }],           // 1.8s
+      'interactive': ['error', { maxNumericValue: 3800 }],                     // TTI < 3.8s
+    }
+  }
+};
+
+// Budget no package.json (bundlesize)
+"bundlesize": [
+  { "path": "./dist/main.*.js", "maxSize": "170 kB" },
+  { "path": "./dist/*.css",     "maxSize": "50 kB"  }
+]</pre>
+
+      <div class="tip">💡 <strong>Regra dos 3 segundos:</strong> Em 3G lento (1.6 Mbps de download), 3 segundos = ~600 KB transferidos. Se seu JS + CSS + HTML crítico passar de 400–500 KB gzipped, usuários em 3G não vão esperar. Mobile representa 60%+ do tráfego web global.</div>
+    </div>
+
+    <div class="topic">
+      <h3>📋 Checklist de Otimização JS/CSS</h3>
+      <table>
+        <tr><th>O que fazer</th><th>Ganho esperado</th><th>Esforço</th></tr>
+        <tr><td>Ativar Brotli/Gzip no servidor</td><td class="green">60–80% menos bytes</td><td class="green">Baixo</td></tr>
+        <tr><td>Habilitar cache longo (hash no nome)</td><td class="green">0 bytes em revisitas</td><td class="green">Baixo</td></tr>
+        <tr><td>Code splitting por rota</td><td class="green">50–70% JS inicial</td><td class="yellow">Médio</td></tr>
+        <tr><td>Tree shaking ativo</td><td class="green">20–40% bundle</td><td class="green">Baixo (config bundler)</td></tr>
+        <tr><td>Substituir libs pesadas</td><td class="green">30–60 KB por lib</td><td class="yellow">Médio</td></tr>
+        <tr><td>PurgeCSS / Tailwind JIT</td><td class="green">90%+ do CSS</td><td class="green">Baixo</td></tr>
+        <tr><td>Critical CSS inline</td><td class="green">FCP -0.5s a -1s</td><td class="yellow">Médio</td></tr>
+        <tr><td>Debounce em eventos frequentes</td><td class="yellow">INP melhorado</td><td class="green">Baixo</td></tr>
+        <tr><td>Virtualizar listas longas</td><td class="green">DOM -95% nodes</td><td class="yellow">Médio</td></tr>
+        <tr><td>Web Workers para processamento</td><td class="green">Main thread livre</td><td class="red">Alto</td></tr>
+        <tr><td>OnPush / Signals (Angular)</td><td class="green">CD -70% ciclos</td><td class="yellow">Médio</td></tr>
+        <tr><td>content-visibility: auto</td><td class="green">Render -50% off-screen</td><td class="green">Baixo</td></tr>
+      </table>
+    </div>
+  </section>
+
+
     </article>
   </div>
 </div>
