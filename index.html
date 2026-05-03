@@ -2229,8 +2229,6 @@ Consumiu o error budget?
     </div>
   </section>
 
-  <!-- ════════════════════════════════════════════
-       
     </article>
   </div>
 </div>
@@ -2248,9 +2246,11 @@ Consumiu o error budget?
       <a href="#browser-render">Render Pipeline</a>
       <a href="#v8">V8 Engine</a>
       <a href="#browser-sec">Segurança</a>
+      <a href="#browser-spa">Navegação SPA vs Tradicional</a>
     </nav>
     <article class="content-article">
-COMO FUNCIONAM OS NAVEGADORES — ARQUITETURA
+<!-- ════════════════════════════════════════════
+     COMO FUNCIONAM OS NAVEGADORES — ARQUITETURA
   ════════════════════════════════════════════ -->
   <section class="section" id="browser-arch">
     <h2 class="section-title">🌐 Como Funcionam os Navegadores <span class="badge">Browsers</span></h2>
@@ -2622,7 +2622,272 @@ Content-Security-Policy:
     </div>
   </section>
 
-  
+<!-- ════════════════════════════════════════════
+     NAVEGAÇÃO SPA VS TRADICIONAL
+  ════════════════════════════════════════════ -->
+  <section class="section" id="browser-spa">
+    <h2 class="section-title">🗺️ Navegação: Tradicional vs SPA vs Angular <span class="badge">Browsers</span></h2>
+    <p class="section-sub">O que acontece em cada camada — do clique do usuário até os pixels na tela — dependendo de como a aplicação foi construída.</p>
+
+    <div class="topic">
+      <h3>🔁 Navegação Tradicional (sem framework)</h3>
+      <div class="analogy">
+        <strong>Analogia:</strong> Cada clique num link é como pedir uma refeição do zero. O garçom (browser) vai até a cozinha (servidor), espera tudo ser preparado, traz o prato completo, você come e joga o prato fora. No próximo clique, recomeça tudo.
+      </div>
+      <div class="diagram">Usuário clica em &lt;a href="/sobre"&gt;
+
+  1. BROWSER
+     └─ Descarta a página atual (DOM, JS heap, listeners — tudo)
+     └─ Gera novo request HTTP GET /sobre
+
+  2. REDE
+     └─ DNS (cache quente → ~0ms, frio → ~60-100ms)
+     └─ TCP Handshake (1 RTT) — ou reusa conexão keep-alive
+     └─ TLS (0–1 RTT se já estabelecido via session resumption)
+     └─ HTTP Request → servidor recebe
+
+  3. SERVIDOR
+     └─ Roteamento (ex: Express/NestJS): qual handler responde /sobre?
+     └─ Handler executa: busca dados no banco, chama serviços
+     └─ Template engine (ex: Handlebars, Jinja) gera HTML completo
+     └─ Resposta: 200 OK + HTML como string
+
+  4. BROWSER (página nova)
+     └─ Parser HTML constrói DOM do zero
+     └─ Descobre &lt;link&gt; CSS → CSSOM
+     └─ Descobre &lt;script&gt; → baixa, executa
+     └─ Render tree → Layout → Paint → Composite
+     └─ Página visível (FCP)</div>
+
+      <h4>Custo:</h4>
+      <ul class="list">
+        <li>Todo o JS é re-baixado/re-executado (a menos que esteja em cache)</li>
+        <li>Flash branco entre páginas (DOM descartado)</li>
+        <li>Estado do app perdido — a cada navegação, começa do zero</li>
+        <li>Vantagem: sem JS = funciona. Cada URL é uma página real — SEO trivial.</li>
+      </ul>
+    </div>
+
+    <div class="topic">
+      <h3>⚡ Navegação SPA — History API (sem framework)</h3>
+      <p>Uma SPA intercepta o clique antes de o browser fazer o request. Troca só o conteúdo, mantém o shell da aplicação.</p>
+      <div class="diagram">Usuário clica em &lt;a href="/sobre"&gt;
+
+  1. JS intercepta o evento antes do browser agir
+     └─ event.preventDefault() — cancela a navegação real
+     └─ history.pushState({}, '', '/sobre') — muda a URL sem request
+
+  2. O browser:
+     └─ Atualiza a barra de endereços para /sobre
+     └─ Adiciona entrada no histórico (botão Voltar funciona)
+     └─ NÃO faz request HTTP nenhum
+     └─ NÃO descarta o DOM
+
+  3. JS do app (router manual):
+     └─ Lê window.location.pathname → '/sobre'
+     └─ Decide qual componente/HTML renderizar
+     └─ fetch('/api/sobre') — busca só os DADOS (JSON), não HTML
+     └─ Manipula o DOM: document.getElementById('app').innerHTML = ...
+
+  4. BROWSER (mesma página, DOM atualizado)
+     └─ Recalc Style → Layout → Paint → Composite
+     └─ Só a parte que mudou é re-renderizada</div>
+
+      <pre>// Roteador SPA mínimo (vanilla JS)
+window.addEventListener('popstate', renderPage); // botão Voltar
+
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('a[href]');
+  if (!link || link.origin !== location.origin) return;
+
+  e.preventDefault();
+  history.pushState({}, '', link.href);
+  renderPage();
+});
+
+async function renderPage() {
+  const path = location.pathname;
+  const routes = { '/': HomeComponent, '/sobre': SobreComponent };
+  const Component = routes[path] ?? NotFoundComponent;
+
+  const data = await fetch(`/api${path}`).then(r => r.json());
+  document.getElementById('app').replaceChildren(Component(data));
+}</pre>
+    </div>
+
+    <div class="topic">
+      <h3>🅰️ Navegação Angular — Camadas Internas</h3>
+      <p>O Angular adiciona diversas camadas sobre a History API. Entender cada uma explica por que o Angular é tão poderoso — e por que às vezes é tão difícil de debugar.</p>
+
+      <div class="diagram">Usuário clica em &lt;a routerLink="/sobre"&gt;
+
+  CAMADA 1 — RouterLinkDirective (Angular)
+  ├─ Diretiva escuta o evento (click)
+  ├─ Chama router.navigateByUrl('/sobre')
+  └─ NÃO usa &lt;a href&gt; padrão — event não chega ao browser
+
+  CAMADA 2 — Router (Angular)
+  ├─ Executa a pipeline de navegação:
+  │   CanDeactivate  → "posso sair da página atual?"
+  │   CanActivate    → "posso entrar em /sobre?"
+  │   CanLoad        → "posso carregar o módulo lazy?"
+  │   Resolve        → busca dados antes de renderizar
+  │   CanActivateChild → guards em rotas filhas
+  └─ Se algum guard retorna false → navegação cancelada
+
+  CAMADA 3 — Lazy Loading (se configurado)
+  ├─ Router detecta que SobreModule não foi carregado
+  ├─ import('./sobre/sobre.module') — dynamic import
+  ├─ Webpack/esbuild baixa sobre.chunk.js da rede
+  └─ Angular compila e registra o módulo
+
+  CAMADA 4 — RouterOutlet
+  ├─ Diretiva &lt;router-outlet&gt; escuta eventos do Router
+  ├─ Destrói o componente atual (ngOnDestroy, unsubscribes)
+  ├─ Instancia SobreComponent
+  └─ Insere no DOM no lugar do outlet
+
+  CAMADA 5 — Change Detection (Zone.js)
+  ├─ Zone.js "envolve" todos os callbacks assíncronos
+  ├─ Detecta que algo mudou (dados do Resolve chegaram)
+  ├─ Dispara ApplicationRef.tick()
+  └─ Angular percorre a árvore de componentes verificando mudanças
+
+  CAMADA 6 — Renderer2 / Virtual DOM diff
+  ├─ Angular compara estado anterior × novo (dirty checking)
+  ├─ Gera lista de operações mínimas no DOM real
+  └─ Aplica: setAttribute, textContent, appendChild...
+
+  CAMADA 7 — BROWSER
+  └─ Recalc Style → Layout → Paint → Composite</div>
+
+      <h4>Zone.js — o "interceptador" do Angular:</h4>
+      <pre>// Zone.js patching — o que acontece sob o capô
+// Zone.js sobrescreve APIs assíncronas nativas do browser:
+
+// Antes do Zone.js:
+setTimeout(callback, 100);
+
+// Com Zone.js (transparente para o dev):
+Zone.current.run(() => {
+  nativeSetTimeout(() => {
+    Zone.current.runTask(callback); // Angular sabe que o callback rodou
+    // → dispara change detection
+  }, 100);
+});
+
+// Isso vale para: setTimeout, setInterval, Promise, fetch,
+// addEventListener, XMLHttpRequest, MutationObserver...
+// Zone.js "vê" tudo que acontece de async no app.</pre>
+
+      <h4>Change Detection — Default vs OnPush:</h4>
+      <div class="diagram">Default (verificação em toda a árvore):
+  Qualquer evento async → Angular verifica TODOS os componentes
+  Componente A → Componente B → Componente C → ...
+  Custo: O(n) componentes a cada mudança
+
+OnPush (verificação só quando necessário):
+  Componente só é verificado se:
+  ├─ Um @Input() recebeu nova REFERÊNCIA (não mutação)
+  ├─ Um evento (click, etc.) disparou dentro do componente
+  ├─ Um Observable via async pipe emitiu novo valor
+  └─ markForCheck() foi chamado manualmente
+
+  Custo: muito menor — ideal para listas grandes e componentes folha</div>
+
+      <pre>// Componente com OnPush
+@Component({
+  selector: 'app-produto',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `&lt;p&gt;{{ produto.nome }}&lt;/p&gt;`
+})
+export class ProdutoComponent {
+  @Input() produto!: Produto; // nova referência → re-verifica
+                               // mutação: produto.nome = 'X' → NÃO re-verifica
+}
+
+// Forçar verificação manual (ex: dados vindos de fora do Zone.js)
+constructor(private cdr: ChangeDetectorRef) {}
+ngOnInit() {
+  this.webSocket.onMessage((data) => {
+    this.dados = data;
+    this.cdr.markForCheck(); // avisa o Angular para verificar esse componente
+  });
+}</pre>
+
+      <h4>Signals (Angular 17+) — sem Zone.js:</h4>
+      <pre>// Com Signals, o Angular sabe EXATAMENTE o que mudou
+// Não precisa verificar a árvore inteira
+
+import { signal, computed } from '@angular/core';
+
+@Component({
+  template: `&lt;p&gt;{{ nome() }}&lt;/p&gt;`  // () porque signal é função
+})
+export class UserComponent {
+  nome = signal('Ana');         // signal: valor reativo
+  nomeUpper = computed(() =&gt;   // computed: derivado automaticamente
+    this.nome().toUpperCase()
+  );
+
+  renomear() {
+    this.nome.set('João');      // Angular sabe: só re-renderiza quem usa nome()
+  }
+}</pre>
+    </div>
+
+    <div class="topic">
+      <h3>📊 Comparativo: O que acontece em cada modelo</h3>
+      <table>
+        <tr><th>Etapa</th><th>Tradicional (MPA)</th><th>SPA Vanilla</th><th>Angular</th></tr>
+        <tr><td>Request HTTP ao navegar</td><td class="red">Sempre (HTML)</td><td class="green">Só para dados (JSON)</td><td class="green">Só para dados ou lazy chunk</td></tr>
+        <tr><td>DOM descartado</td><td class="red">Sempre</td><td class="green">Nunca (parcial)</td><td class="green">Só o componente saindo</td></tr>
+        <tr><td>Estado do app</td><td class="red">Perdido</td><td class="green">Mantido</td><td class="green">Mantido (services/stores)</td></tr>
+        <tr><td>Guards/interceptors</td><td>Middleware no servidor</td><td>Manual no JS</td><td class="green">CanActivate, HTTP Interceptors</td></tr>
+        <tr><td>SEO</td><td class="green">Trivial</td><td class="red">Precisa de SSR/prerender</td><td class="yellow">Angular Universal / SSR</td></tr>
+        <tr><td>First load</td><td class="green">Rápido (HTML pronto)</td><td class="red">Lento (baixa todo o JS)</td><td class="red">Mais lento (bundle Angular)</td></tr>
+        <tr><td>Navegações subsequentes</td><td class="red">Lento (round-trip)</td><td class="green">Rápido</td><td class="green">Muito rápido</td></tr>
+      </table>
+    </div>
+
+    <div class="topic">
+      <h3>🔍 Camadas de ponta a ponta: Angular até o pixel</h3>
+      <div class="diagram">CÓDIGO ANGULAR (TypeScript)
+  └─ Compilador Angular (ngc / esbuild) → JavaScript otimizado
+
+BUNDLE JS
+  └─ Webpack/esbuild agrupa + tree-shakes código não usado
+  └─ Chunk principal + lazy chunks por rota
+
+REDE
+  └─ browser faz GET /main.chunk.js (com cache longo — hash no nome)
+  └─ CDN serve do edge (sem tocar o servidor de origem)
+
+V8 ENGINE (dentro do browser)
+  └─ Parser: string JS → AST
+  └─ Ignition: AST → bytecode (executa imediatamente)
+  └─ TurboFan: JIT compila partes quentes → código nativo
+  └─ Angular bootstrap: instancia AppModule, detecta &lt;app-root&gt;
+
+ANGULAR RUNTIME
+  └─ Cria injetor de dependências (DI container)
+  └─ Compila templates → instruções de DOM (não string, são chamadas diretas)
+  └─ Zone.js intercepta async APIs
+  └─ Router inicializa, lê URL atual, ativa componente inicial
+
+RENDERER (Angular → DOM)
+  └─ Renderer2 chama APIs do DOM: createElement, setAttribute, etc.
+  └─ DOM é atualizado
+
+BROWSER PIPELINE
+  └─ Style recalc: CSS aplicado ao novo DOM
+  └─ Layout: posições e tamanhos calculados
+  └─ Paint: pixels em camadas
+  └─ Composite: GPU combina camadas → frame na tela</div>
+    </div>
+  </section>
+
+
     </article>
   </div>
 </div>
